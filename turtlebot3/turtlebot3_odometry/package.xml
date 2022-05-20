@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>turtlebot3_odometry</name>
+  <version>0.0.0</version>
+  <description>
+    The turtlebot3_odometry provides a node that subscribes to the gazebo
+    truth odometry topic for the 3 turtebots in the simulation
+  </description>
+  <author email="eg0013@mix.wvu.edu">Pyo</author>
+  <maintainer email="eg0013@mix.wvu.edu">src2</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>roscpp</exec_depend>
+</package>
