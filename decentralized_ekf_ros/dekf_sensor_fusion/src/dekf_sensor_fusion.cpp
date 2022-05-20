@@ -57,7 +57,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
   H_gps = MatrixXd::Zero(6,15);
   // H_gps.bottomRightCorner(6,6) = MatrixXd::Zero(6,6)-MatrixXd::Identity(6,6);
-  H_gps.block<6,6>(0,5) = MatrixXd::Zero(6,6)-MatrixXd::Identity(6,6);
+  H_gps.block<6,6>(0,3) = MatrixXd::Zero(6,6)-MatrixXd::Identity(6,6);
 
   Eigen::VectorXd R_gpsVal(6);
   R_gpsVal << std::pow(0.1,2), std::pow(0.1,2), std::pow(0.1,2), std::pow(0.4,2), std::pow(0.4,2), std::pow(0.4,2);
@@ -227,8 +227,8 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // matrix.block<p,q>(i,j) fixed size block expression
     Eigen::Matrix <double, 15, 15> F = Eigen::MatrixXd::Zero(15,15);
     F.block<3,3>(3,0) = _skewsym(-_Cnb.transpose()*_imu_acce);
-    // F.block<3,3>(3,9) = _Cnb.transpose();
-    // F.block<3,3>(0,12) = _Cnb.transpose();
+    F.block<3,3>(3,9) = _Cnb.transpose();
+    F.block<3,3>(0,12) = _Cnb.transpose();
 
     MatrixXd I3(3, 3);
     I3.setIdentity();
@@ -267,9 +267,9 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // bg(1)=bg(1)+_x(13);
     // bg(2)=bg(2)+_x(14);
 
-    // std::cout << "Sates: " << '\n' << _x << '\n';
-    // std::cout << "Ba: " << '\n' << ba << '\n';
-    // std::cout << "Bg: " << '\n' << bg << '\n';
+    std::cout << "Sates: " << '\n' << _x << '\n';
+    std::cout << "Ba: " << '\n' << ba << '\n';
+    std::cout << "Bg: " << '\n' << bg << '\n';
 
     _x.segment(9,6)<<Eigen::VectorXd::Zero(6);
 
@@ -295,7 +295,7 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     // }
     // else if (robot_name=="tb3_1") {
     //   gps_pos[0] = msg->pose.pose.position.x;
-    //   gps_pos[1] = msg->pose.pose.position.y+1;
+    //   gps_pos[1] = msg->pose.pose.position.y;
     // }
     gps_pos[0] = msg->pose.pose.position.x;
     gps_pos[1] = msg->pose.pose.position.y;
