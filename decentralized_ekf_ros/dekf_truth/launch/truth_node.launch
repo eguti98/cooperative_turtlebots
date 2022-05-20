@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+  <group ns="tb3_0">
+    <param name="/use_sim_time" value="true"/>
+    <node name="truth_node" pkg="dekf_truth" type="truth_node" output="screen">
+      <rosparam
+        command="load"
+        file="$(find dekf_truth)/config/truth_tb3_0.yaml"
+        subst_value="true"
+      />
+    </node>
+  </group>
+  <group ns="tb3_1">
+    <param name="/use_sim_time" value="true"/>
+    <node name="truth_node" pkg="dekf_truth" type="truth_node" output="screen">
+      <rosparam
+        command="load"
+        file="$(find dekf_truth)/config/truth_tb3_1.yaml"
+        subst_value="true"
+      />
+    </node>
+  </group>
+  <group ns="tb3_2">
+    <param name="/use_sim_time" value="true"/>
+    <node name="truth_node" pkg="dekf_truth" type="truth_node" output="screen">
+      <rosparam
+        command="load"
+        file="$(find dekf_truth)/config/truth_tb3_2.yaml"
+        subst_value="true"
+      />
+    </node>
+  </group>
+</launch>

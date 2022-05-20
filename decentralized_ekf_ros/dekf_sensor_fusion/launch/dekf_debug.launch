@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="dekf_sensor_fusion" pkg="dekf_sensor_fusion" type="dekf_sensor_fusion" output="screen" launch-prefix="gdb -ex run --args">
+  </node>
+</launch>

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- small_scout_1 state_machine launch file -->
+  <include file="$(find dekf_sensor_fusion)/launch/tb3_0.launch"/>
+
+  <include file="$(find dekf_sensor_fusion)/launch/tb3_1.launch"/>
+
+
+</launch>

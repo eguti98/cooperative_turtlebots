@@ -1,0 +1,4 @@
+dekf_sensor_fusion/globalCovariance poscov
+---
+bool success
+float64 result
