@@ -71,6 +71,34 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   gps_update_done = 0;
   _range= 100; //TODO if the range is not given it starts with '0'
 
+
+  R_zero << std::pow(0.01,2),0,0,0,0,0,
+            0,std::pow(0.01,2),0,0,0,0,
+            0,0,std::pow(0.0025,2),0,0,0,
+            0,0,0,std::pow(0.02,2),0,0,
+            0,0,0,0,std::pow(0.02,2),0,
+            0,0,0,0,0,std::pow(1.0,2);
+
+  // NON HOLONONOMIC R VALUES
+  R_holo << 0.05,0,
+            0,0.1;
+  H_zupt << 0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0;
+
+  H_zaru << 0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1;
+
+  H_zero << 0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,
+            0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0;
+
+
+
   sub_imu = nh.subscribe("imu", 10, &DekfSensorFusion::imuCallback, this);
   sub_GPS = nh.subscribe("gps", 1, &DekfSensorFusion::gpsCallback,this); ///uav0/mavros/global_position/local // this is not the specific gps topic
   true_drone1 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone1Callback, this);
@@ -158,9 +186,20 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     double p = msg->angular_velocity.x-bg(0);
     double q = -msg->angular_velocity.y-bg(1);
     double r = -msg->angular_velocity.z-bg(2);
+    // omega_ib = p,q,r
     double ax= msg->linear_acceleration.x-ba(0);
     double ay= msg->linear_acceleration.y-ba(1);
     double az= msg->linear_acceleration.z + 9.81-ba(2);
+    // // f_ib= ax,ay,az
+
+    // double p = msg->angular_velocity.x;
+    // double q = -msg->angular_velocity.y;
+    // double r = -msg->angular_velocity.z;
+    // // omega_ib = p,q,r
+    // double ax= msg->linear_acceleration.x;
+    // double ay= msg->linear_acceleration.y;
+    // double az= msg->linear_acceleration.z + 9.81;
+    // f_ib= ax,ay,az
     _imu_gyro << p, q, r; // TODO: Add bg
     _imu_acce << ax,ay,az; // TODO: Add ba
 
@@ -172,14 +211,21 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // Cbn_new= Cbn_old * (I + Omega_ib * _dt)
     // Cbn_old=Cbn_new;
     // _attitude = _dcm2euler(Cbn_new);
+
+    Matrix3d CnbMinus = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
+    Matrix3d CbnMinus;
+    CbnMinus =CnbMinus.transpose();
+
     Matrix3d Cbn;
-    Cbn = _Cnb.transpose() * (I + Omega_ib * _dt); // ignore Earth rate and corriolis terms
+    Cbn = CbnMinus * (I + Omega_ib * _dt); // ignore Earth rate and corriolis terms
+
+    // Cbn = _Cnb.transpose() * (I + Omega_ib * _dt); // ignore Earth rate and corriolis terms
     // std::cout << "_dt" << '\n' << _dt << '\n' ;
     //     std::cout << "_Cnb TT" << '\n' << _Cnb.transpose() << '\n' ;
     //         std::cout << "_Cnb" << '\n' << _Cnb << '\n' ;
     //                     std::cout << "Omega_ib" << '\n' << Omega_ib << '\n' ;
-    _Cnb = Cbn.transpose();
-    _attitude = _dcm2euler(_Cnb.transpose());
+    // _Cnb = Cbn.transpose();
+    _attitude = _dcm2euler(Cbn);
 
     // std::cout << "_attitude: " << '\n' << _attitude << '\n';
     // std::cout << "Ba: " << '\n' << ba << '\n';
@@ -187,7 +233,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 
 
     Vector3d V_n_ib;
-    V_n_ib=0.5*(Cbn+_Cnb.transpose())*_imu_acce*_dt;
+    V_n_ib=0.5*(Cbn+CbnMinus)*_imu_acce*_dt;
 
     Vector3d grav_;
     grav_ << 0,0,-9.81;
@@ -199,8 +245,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     Pos_old=_pos+(V_old+_vel)*_dt/2.0;
     // std::cout << "_pos: " << '\n' << _pos << '\n';
     // std::cout << "Pos_old: " << '\n' << Pos_old << '\n';
-    _vel=V_old;
-    _pos=Pos_old;
+
 
     if (relative_update_done == 1) {  // TODO: Check
       relative_update_done = 0;
@@ -221,20 +266,20 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 
     MatrixXd I15(15, 15);
     I15.setIdentity();
-    MatrixXd STM;
+    MatrixXd STM(15,15);
     // starting at (i,j), block of size (p,q),
     // matrix.block(i,j,p,q)  dynamic size block expression
     // matrix.block<p,q>(i,j) fixed size block expression
-    Eigen::Matrix <double, 15, 15> F = Eigen::MatrixXd::Zero(15,15);
-    F.block<3,3>(3,0) = _skewsym(-_Cnb.transpose()*_imu_acce);
-    F.block<3,3>(3,9) = _Cnb.transpose();
-    F.block<3,3>(0,12) = _Cnb.transpose();
 
+    Eigen::Matrix <double, 15, 15> F = Eigen::MatrixXd::Zero(15,15);
+    F.block<3,3>(3,0) = _skewsym(-Cbn*_imu_acce);
+    F.block<3,3>(3,9) = Cbn;
+    F.block<3,3>(0,12) = Cbn;
     MatrixXd I3(3, 3);
     I3.setIdentity();
     F.block<3,3>(6,3) = I3;
-
     STM = I15+F*_dt;
+
 
     _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
     // std::cout << "/* IMU STATE */" << '\n' << _x << '\n';
@@ -243,8 +288,79 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // publishResidual_();
     _x= STM*_x; //State
     // std::cout << "/* IMU STATE after STM */" << '\n' << _x << '\n';
+
+    // START - CALCULATE Q
+    double sig_gyro_inRun = 1.6*3.14/180/3600; //rad/s -- standard deviation of the gyro dynamic biases
+    double sig_ARW = 10*(3.14/180)*sqrt(3600)/3600;; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
+
+    double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
+    double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
+
+//following 14.2.6 of Groves
+    double Srg= pow(sig_ARW,2)*_dt; // PSD of the gyro noise
+    double Sra= pow(sig_VRW,2)*_dt; // PSD of the acce noise
+    double Sbad=pow(sig_accel_inRun,2)/_dt; // accelerometer bias variation PSD
+    double Sbgd=pow(sig_gyro_inRun,2)/_dt; // gyro bias variation PSD
+
+//Simplified -> eq 14.82 pg 592
+
+        Eigen::Matrix <double, 15, 15> Q(15,15);
+        Q<<Srg*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+        Eigen::Matrix3d::Zero(3,3),Sra*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
+        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*_dt*Eigen::Matrix3d::Identity(3,3);
+
+        _Q_ins=Q;
+    // END - CALCULATE Q
     _P = STM * _P * STM.transpose() + _Q_ins; // Covariance Matrix
     // std::cout << "Local P IN MOTION UPDATE" << '\n' << _P <<'\n';
+    // //START - NONHOLONOMIC
+    Matrix3d Cnb = _euler2dcmV(_attitude[0],_attitude[1],_attitude[2]);
+    // Vector3d lf2b(0.0, 0.0, 0.272);
+    // // std::cout << "/* message */" <<Cnb*_x.block<3,1>(0,3) <<'\n';
+    // z_holo.row(0) = -eye3.row(1)*(Cnb*_vel-_skewsym(_imu_gyro)*lf2b); //z31
+    // z_holo.row(1) = -eye3.row(2)*(Cnb*_vel-_skewsym(_imu_gyro)*lf2b); //z41
+    // H_holo.row(0) << zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h32
+    // H_holo.row(1) << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h42
+    //
+    // // if (abs(_imu_gyro[2]>0.1)) {
+    //   R_holoS << 0.05;
+    //   z_holoS << -eye3.row(2)*(Cnb*_vel-_skewsym(_imu_gyro)*lf2b);
+    //   H_holoS << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
+    //   double tempVar1= H_holoS * _P * H_holoS.transpose();
+    //   double tempVar2= 1/(tempVar1+0.05);
+    //   Vector15 tempvar3= _P * H_holoS.transpose();
+    //   Vector15 tempVar4= tempvar3*tempVar2;
+    //    K_holoS=tempVar4;
+    //    // std::cout << "/* message */" <<H_holoS * _x <<'\n';
+    //    // std::cout << "/* message */" <<_x+K_holoS*(z_holoS- (H_holoS * _x)) <<'\n';
+    //    _x = _x + K_holoS* (z_holoS  - (H_holoS * _x));
+    //    // _attitude << states[0],states[1],states[2];
+    //    // _vel<< states(3),states(4),states(5);
+    //    // _pos<< states(6),states(7),states(8);
+    //    _P=(Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS).transpose() + K_holoS * R_holoS * K_holoS.transpose();
+    //    //END - NONHOLONOMIC
+      //
+       // START - ZERO UPDATES
+      //  Cnb = _euler2dcmV(_x[0],_x[1],_x[2]);
+      //  Vector3d z_zaru;
+      //  Vector3d z_zupt;
+      //          z_zaru = -_imu_gyro.transpose();
+      //          z_zupt = -_vel;
+      //          Eigen::Matrix<double, 6, 1> z_zero;
+      //          z_zero.segment(0,3) <<z_zaru;
+      //          z_zero.segment(3,3) <<z_zupt;
+      //          K_zero = _P * H_zero.transpose() * (H_zero * _P * H_zero.transpose() + R_zero).inverse();
+      //          _x = _x + K_zero * (z_zero  - (H_zero * _x));
+      //          // ins_att_ = CoreNav::dcm_to_eul((Eigen::MatrixXd::Identity(3,3)- CoreNav::skew_symm(error_states_.segment(0,3)))*Cnb.transpose());
+      //          // ins_vel_ = vel - error_states_.segment(3,3);
+      //          // ins_pos_ = llh - error_states_.segment(6,3);
+      //          // error_states_.segment(0,9)<<Eigen::VectorXd::Zero(9);
+      //          _P=(Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+      // //END - ZERO UPDATES
+      _vel=V_old;
+      _pos=Pos_old;
     //Update Global P
 
     if (robot_name=="tb3_0") {
@@ -260,18 +376,21 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       // _globalP.block(9,0,9,9) = sigma_ij;
     }
 
-    // ba(0)=ba(0)+_x(9);
-    // ba(1)=ba(1)+_x(10);
-    // ba(2)=ba(2)+_x(11);
-    // bg(0)=bg(0)+_x(12);
-    // bg(1)=bg(1)+_x(13);
-    // bg(2)=bg(2)+_x(14);
+    ba(0)=_x(9);
+    ba(1)=_x(10);
+    ba(2)=_x(11);
+    bg(0)=_x(12);
+    bg(1)=_x(13);
+    bg(2)=_x(14);
 
-    std::cout << "Sates: " << '\n' << _x << '\n';
-    std::cout << "Ba: " << '\n' << ba << '\n';
-    std::cout << "Bg: " << '\n' << bg << '\n';
+    std::cout << "States: " << '\n' << _x << '\n';
+    // std::cout << "STM" << '\n' << STM << '\n' ;
+    // std::cout << "_x.segment(9,6)" << '\n' << _x.segment(9,6) << '\n' ;
 
-    _x.segment(9,6)<<Eigen::VectorXd::Zero(6);
+    // std::cout << "Ba: " << '\n' << ba << '\n';
+    // std::cout << "Bg: " << '\n' << bg << '\n';
+
+    // _x.segment(9,6)<<Eigen::VectorXd::Zero(6);
 
     publishOdom_();
     publishRange_();
@@ -279,13 +398,55 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
   }
 
 }
+//   void DekfSensorFusion::NonHolonomic(const DekfSensorFusion::Vector3 _vel,const DekfSensorFusion::Vector3 _attitude,const DekfSensorFusion::Vector3 _pos){
+// // void DekfSensorFusion::NonHolonomic(const Eigen::MatrixXd _x, const Eigen::MatrixXd _P, Eigen::Vector3d _imu_gyro)
+//
+//         // countNonHolo++;
+//         Matrix3d Cnb = _euler2dcmV(_attitude[0],_attitude[1],_attitude[2]);
+//         Vector3d lf2b(0.0, 0.0, 0.272);
+//         // std::cout << "/* message */" <<Cnb*_x.block<3,1>(0,3) <<'\n';
+//         z_holo.row(0) = -eye3.row(1)*(Cnb*_vel-_skewsym(imu_gyro)*lf2b); //z31
+//         z_holo.row(1) = -eye3.row(2)*(Cnb*_vel-_skewsym(imu_gyro)*lf2b); //z41
+//         H_holo.row(0) << zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h32
+//         H_holo.row(1) << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h42
+//
+//         // if (abs(_imu_gyro[2]>0.1)) {
+//           R_holoS << 0.05;
+//           z_holoS << -eye3.row(2)*(Cnb*_vel-_skewsym(imu_gyro)*lf2b);
+//           H_holoS << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
+//           double tempVar1= H_holoS * _P * H_holoS.transpose();
+//           double tempVar2= 1/(tempVar1+0.05);
+//           Vector15 tempvar3= _P * H_holoS.transpose();
+//           Vector15 tempVar4= tempvar3*tempVar2;
+//            K_holoS=tempVar4;
+//            // std::cout << "/* message */" <<H_holoS * _x <<'\n';
+//            // std::cout << "/* message */" <<_x+K_holoS*(z_holoS- (H_holoS * _x)) <<'\n';
+//            _x = _x + K_holoS* (z_holoS  - (H_holoS * _x));
+//            // _attitude << states[0],states[1],states[2];
+//            // _vel<< states(3),states(4),states(5);
+//            // _pos<< states(6),states(7),states(8);
+//
+//            _P=(Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS).transpose() + K_holoS * R_holoS * K_holoS.transpose();
+//         // }
+//         // else {
+//         //   K_holo = _P * H_holo.transpose() * (H_holo * _P * H_holo.transpose() + R_holo).inverse();
+//         //   _x = _x + K_holo* (z_holo  - H_holo * _x);
+//         //   // ins_att_ = CoreNav::dcm_to_eul((Eigen::MatrixXd::Identity(3,3)- _skewsym(error_states_.segment(0,3)))*Cnb.transpose());
+//         //   // ins_vel_ = vel - error_states_.segment(3,3);
+//         //   // ins_pos_ = llh - error_states_.segment(6,3);
+//         //   // error_states_.segment(0,9)<<Eigen::VectorXd::Zero(9);
+//         //   _P=(Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo ).transpose() + K_holo * R_holo * K_holo.transpose();
+//         // }
+//
+//         return states;
+// }
 
 // GPS Update
 void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
 
   if (initializer == 1) {
-    Matrix3d Cnb = _euler2dcm(_attitude);
+    Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
     Matrix3d Cbn = Cnb.transpose();
     MatrixXd K_gps(15,6);
 
@@ -338,6 +499,12 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     gps_Uvel=_vel ;
     gps_Upos=_pos;
     gps_UP=_P;
+    ba(0)=_x(9);
+    ba(1)=_x(10);
+    ba(2)=_x(11);
+    bg(0)=_x(12);
+    bg(1)=_x(13);
+    bg(2)=_x(14);
 
     // if (robot_name=="uav1") {
     // _globalP.block(0,0,9,9) =gps_UP;
@@ -455,7 +622,7 @@ void DekfSensorFusion::relativeUpdate()
 
             // _x = states.segment(0,15);
             range_est = states.segment(0,15);
-            Matrix3d Cnb = _euler2dcm(range_est.segment(0,3));
+            Matrix3d Cnb = _euler2dcmV(range_est(0),range_est(1),range_est(2));
             Matrix3d Cbn = Cnb.transpose();
 
             // _attitude(0) = (0);
@@ -497,7 +664,7 @@ void DekfSensorFusion::relativeUpdate()
 
             // _x = states.segment(15,15);
             range_est = states.segment(15,15);
-            Matrix3d Cnb = _euler2dcm(range_est.segment(0,3));
+            Matrix3d Cnb = _euler2dcmV(range_est(0),range_est(1),range_est(2));
             Matrix3d Cbn = Cnb.transpose();
             _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
             _vel(0) = range_est(3);
@@ -666,12 +833,12 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
   return true;
 }
 // TOOLS
-void DekfSensorFusion::_euler2dcmV()
+Matrix3d DekfSensorFusion::_euler2dcmV(double phi, double theta, double psi)
 {
   // from Titterton and Weston & adapted from MS Braasch Matlab toolbox
-  double ph = _attitude(0);
-  double th = _attitude(1);
-  double ps = _attitude(2);
+  double ph = phi;
+  double th = theta;
+  double ps = psi;
 
   double cps = cos(ps);
   double sps = sin(ps);
@@ -689,8 +856,8 @@ void DekfSensorFusion::_euler2dcmV()
   Matrix3d C3;
   C3 << 1, 0, 0, 0, cph, sph, 0, -sph, cph;
 
-  _Cnb = C3 * C2 * C1;
-
+  Matrix3d DCMnb = C3 * C2 * C1;
+return DCMnb;
 }
 Matrix3d DekfSensorFusion::_euler2dcm(Vector3d eulVec)
 {

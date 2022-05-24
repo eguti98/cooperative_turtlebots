@@ -44,6 +44,8 @@ public:
   Eigen::Matrix <double, 15, 15> P_corr2;
   Eigen::Matrix <double, 15, 15> sigma_ij;
   Eigen::Matrix <double, 15, 15> sigma_ji;
+  typedef Eigen::Matrix<double, 15, 1> Vector15;
+  typedef Eigen::Matrix<double, 3, 1> Vector3;
 
   bool initializer;
   bool truths_1;
@@ -52,6 +54,8 @@ public:
   bool gps_update_done;
   double _range;
   double res_range;
+  Matrix3d eye3=Eigen::Matrix3d::Identity();
+  Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);
   // ros::ServiceClient dekf_sensor_fusion_client;
 private:
   ros::NodeHandle &nh_;
@@ -87,6 +91,24 @@ private:
   Eigen::Matrix <double, 6, 6> R_gps;
   Eigen::Matrix <double, 1, 1> R_range;
   Eigen::Matrix <double, 1, 30> H_range;
+  Eigen::Matrix<double, 2, 2> R_holo;
+  Eigen::Matrix<double, 1, 1> R_holoS;
+  Eigen::Matrix<double, 15, 2> K_holo;
+  Eigen::Matrix<double, 15, 1> K_holoS;
+  Eigen::Matrix<double, 2, 15> H_holo;
+  Eigen::Matrix<double, 1, 15> H_holoS;
+  Eigen::Matrix<double, 2, 1> z_holo;
+  Eigen::Matrix<double, 1, 1> z_holoS;
+  Eigen::Matrix<double, 3, 3> R_zupt;
+  Eigen::Matrix<double, 3, 3> R_zaru;
+Eigen::Matrix<double, 6, 6> R_zero;
+Eigen::Matrix<double, 15, 3> K_zupt;
+        Eigen::Matrix<double, 15, 3> K_zaru;
+        Eigen::Matrix<double, 15, 6> K_zero;
+Eigen::Matrix<double, 3, 15> H_zupt;
+        Eigen::Matrix<double, 3, 15> H_zaru;
+        Eigen::Matrix<double, 6, 15> H_zero;
+
 
   // VectorXd state1(15,1);
   // VectorXd state2(15,1);
@@ -140,13 +162,13 @@ private:
   // MatrixXd _P;
   // MatrixXd _Q_ins;
   int _insUpdate;
-  void _euler2dcmV();
+  Matrix3d _euler2dcmV(double phi, double theta, double psi);
   Matrix3d _euler2dcm(Vector3d eulVec);
   Vector4d _dcm2qua(Matrix3d Cnb);
   Matrix3d _qua2dcm(Vector4d qua);
   Vector3d _dcm2euler(Matrix3d dcm);
   Matrix3d _skewsym(Vector3d vec);
-
+  // void NonHolonomic(const DekfSensorFusion::Vector3 vel,const DekfSensorFusion::Vector3 att,const DekfSensorFusion::Vector3 pos,  const DekfSensorFusion::Vector15 _x, const Eigen::Matrix <double, 15, 15> _P, DekfSensorFusion::Vector3 imu_gyro) ;
   void imuCallback(const sensor_msgs::Imu::ConstPtr &msg);
   void voCallback(const nav_msgs::Odometry::ConstPtr &msg);
   void gpsCallback(const nav_msgs::Odometry::ConstPtr& msg);       // TODO: Fill this with GPS message type based on what sensor used.
