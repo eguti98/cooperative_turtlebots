@@ -183,13 +183,13 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     }
     _t = _time.toSec();
 
-    double p = msg->angular_velocity.x-bg(0);
-    double q = -msg->angular_velocity.y-bg(1);
-    double r = -msg->angular_velocity.z-bg(2);
+    double p = msg->angular_velocity.x+bg(0);
+    double q = -msg->angular_velocity.y+bg(1);
+    double r = -msg->angular_velocity.z+bg(2);
     // omega_ib = p,q,r
-    double ax= msg->linear_acceleration.x-ba(0);
-    double ay= msg->linear_acceleration.y-ba(1);
-    double az= msg->linear_acceleration.z + 9.81-ba(2);
+    double ax= msg->linear_acceleration.x+ba(0);
+    double ay= msg->linear_acceleration.y+ba(1);
+    double az= msg->linear_acceleration.z + 9.81+ba(2);
     // // f_ib= ax,ay,az
 
     // double p = msg->angular_velocity.x;
@@ -376,7 +376,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       // _globalP.block(9,0,9,9) = sigma_ij;
     }
 
-    ba(0)=_x(9);
+    ba(0)= _x(9);
     ba(1)=_x(10);
     ba(2)=_x(11);
     bg(0)=_x(12);
