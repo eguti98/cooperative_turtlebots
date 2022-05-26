@@ -46,6 +46,8 @@ public:
   Eigen::Matrix <double, 15, 15> sigma_ji;
   typedef Eigen::Matrix<double, 15, 1> Vector15;
   typedef Eigen::Matrix<double, 3, 1> Vector3;
+  Vector3d V_old;
+  Vector3d Pos_old;
 
   bool initializer;
   bool truths_1;
@@ -82,6 +84,7 @@ private:
   geometry_msgs::Point32 twist_;
   Eigen::Matrix <double, 15, 15> P_;
   Eigen::Matrix <double, 15, 1> _x;
+  Eigen::Matrix <double, 15, 1> _error_states;
   Eigen::Matrix <double, 15, 15> _P;
   Eigen::Matrix <double, 15, 15> _P_init;
   Eigen::Matrix <double, 15, 15> gps_UP;
@@ -101,13 +104,13 @@ private:
   Eigen::Matrix<double, 1, 1> z_holoS;
   Eigen::Matrix<double, 3, 3> R_zupt;
   Eigen::Matrix<double, 3, 3> R_zaru;
-Eigen::Matrix<double, 6, 6> R_zero;
-Eigen::Matrix<double, 15, 3> K_zupt;
-        Eigen::Matrix<double, 15, 3> K_zaru;
-        Eigen::Matrix<double, 15, 6> K_zero;
-Eigen::Matrix<double, 3, 15> H_zupt;
-        Eigen::Matrix<double, 3, 15> H_zaru;
-        Eigen::Matrix<double, 6, 15> H_zero;
+  Eigen::Matrix<double, 6, 6> R_zero;
+  Eigen::Matrix<double, 15, 3> K_zupt;
+  Eigen::Matrix<double, 15, 3> K_zaru;
+  Eigen::Matrix<double, 15, 6> K_zero;
+  Eigen::Matrix<double, 3, 15> H_zupt;
+  Eigen::Matrix<double, 3, 15> H_zaru;
+  Eigen::Matrix<double, 6, 15> H_zero;
 
 
   // VectorXd state1(15,1);
@@ -180,6 +183,8 @@ Eigen::Matrix<double, 3, 15> H_zupt;
   void publishOdom_();
   void publishRange_();
   void publishResidual_();
+  void zeroUpdate();
+  void nonHolonomicUpdate();
   // void relativeUpdate();
 };
 
