@@ -29,6 +29,8 @@ public:
   std::string robot_name;
   Eigen::Matrix <double, 15, 1>  state_received;
   Eigen::Matrix <double, 15, 1>  state_sent;
+  Eigen::Matrix <double, 15, 1>  err_state_received;
+  Eigen::Matrix <double, 15, 1>  err_state_sent;
   Eigen::Matrix <double, 3, 1>  true_position1;
   Eigen::Matrix <double, 3, 1>  true_position2;
   Eigen::Matrix <double, 15, 1>  range_est;
@@ -36,6 +38,9 @@ public:
   Eigen::Matrix <double, 15, 1> state1;
   Eigen::Matrix <double, 15, 1> state2;
   Eigen::Matrix <double, 30, 1> states;
+  Eigen::Matrix <double, 15, 1> err_state1;
+  Eigen::Matrix <double, 15, 1> err_state2;
+  Eigen::Matrix <double, 30, 1> err_states;
   Eigen::Matrix <double, 15, 15> P_d1;
   Eigen::Matrix <double, 15, 15> P_d12;
   Eigen::Matrix <double, 15, 15> P_d2;
@@ -82,6 +87,9 @@ private:
   geometry_msgs::Pose pose_;
   geometry_msgs::Twist bias_;
   geometry_msgs::Point32 twist_;
+  geometry_msgs::Pose err_pose_;
+  geometry_msgs::Twist err_bias_;
+  geometry_msgs::Point32 err_twist_;
   Eigen::Matrix <double, 15, 15> P_;
   Eigen::Matrix <double, 15, 1> _x;
   Eigen::Matrix <double, 15, 1> _error_states;
@@ -185,6 +193,7 @@ private:
   void publishResidual_();
   void zeroUpdate();
   void nonHolonomicUpdate();
+  void calculateProcessNoiseINS();
   // void relativeUpdate();
 };
 

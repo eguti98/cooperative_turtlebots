@@ -290,71 +290,23 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "/* IMU STATE after STM */" << '\n' << _x << '\n';
 
     // START - CALCULATE Q
-    double sig_gyro_inRun = 1.6*3.14/180/3600; //rad/s -- standard deviation of the gyro dynamic biases
-    double sig_ARW = 10*(3.14/180)*sqrt(3600)/3600;; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
-
-    double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
-    double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
-
-//following 14.2.6 of Groves
-    double Srg= pow(sig_ARW,2)*_dt; // PSD of the gyro noise
-    double Sra= pow(sig_VRW,2)*_dt; // PSD of the acce noise
-    double Sbad=pow(sig_accel_inRun,2)/_dt; // accelerometer bias variation PSD
-    double Sbgd=pow(sig_gyro_inRun,2)/_dt; // gyro bias variation PSD
-
-//Simplified -> eq 14.82 pg 592
-
-        Eigen::Matrix <double, 15, 15> Q(15,15);
-        Q<<Srg*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-        Eigen::Matrix3d::Zero(3,3),Sra*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
-        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*_dt*Eigen::Matrix3d::Identity(3,3);
-
-        _Q_ins=Q;
+    // calculateProcessNoiseINS();
     // END - CALCULATE Q
     _P = STM * _P * STM.transpose() + _Q_ins; // Covariance Matrix
-    // std::cout << "Local P IN MOTION UPDATE" << '\n' << _P <<'\n';
-    // //START - NONHOLONOMIC
+
     Matrix3d Cnb = _euler2dcmV(_attitude[0],_attitude[1],_attitude[2]);
-    // Vector3d lf2b(0.0, 0.0, 0.272);
-    // // std::cout << "/* message */" <<Cnb*_x.block<3,1>(0,3) <<'\n';
-    // z_holo.row(0) = -eye3.row(1)*(Cnb*_vel-_skewsym(_imu_gyro)*lf2b); //z31
-    // z_holo.row(1) = -eye3.row(2)*(Cnb*_vel-_skewsym(_imu_gyro)*lf2b); //z41
-    // H_holo.row(0) << zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h32
-    // H_holo.row(1) << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h42
-    //
-    // // if (abs(_imu_gyro[2]>0.1)) {
-    //   R_holoS << 0.05;
-    //   z_holoS << -eye3.row(2)*(Cnb*_vel-_skewsym(_imu_gyro)*lf2b);
-    //   H_holoS << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
-    //   double tempVar1= H_holoS * _P * H_holoS.transpose();
-    //   double tempVar2= 1/(tempVar1+0.05);
-    //   Vector15 tempvar3= _P * H_holoS.transpose();
-    //   Vector15 tempVar4= tempvar3*tempVar2;
-    //    K_holoS=tempVar4;
-    //    // std::cout << "/* message */" <<H_holoS * _x <<'\n';
-    //    // std::cout << "/* message */" <<_x+K_holoS*(z_holoS- (H_holoS * _x)) <<'\n';
-    //    _x = _x + K_holoS* (z_holoS  - (H_holoS * _x));
-    //    // _attitude << states[0],states[1],states[2];
-    //    // _vel<< states(3),states(4),states(5);
-    //    // _pos<< states(6),states(7),states(8);
-    //    _P=(Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS).transpose() + K_holoS * R_holoS * K_holoS.transpose();
-    //    //END - NONHOLONOMIC
-      //
-       // START - ZERO UPDATES
-       // Cnb = _euler2dcmV(_x[0],_x[1],_x[2]);
-       std::cout << "vel before zupt---" << '\n' << V_old <<'\n';
-       std::cout << "pos before zupt" << '\n' << Pos_old <<'\n';
+       // std::cout << "vel before zupt---" << '\n' << V_old <<'\n';
+       // std::cout << "pos before zupt" << '\n' << Pos_old <<'\n';
+// START - Zero Update (ZUPT & ZARU)
+// zeroUpdate();
+// END - Zero Update (ZUPT & ZARU)
 
-zeroUpdate();
-//
-// std::cout << "vel after zupt" << '\n' << V_old <<'\n';
-// std::cout << "pos after zupt" << '\n' << Pos_old <<'\n';
-
+// START - nonHolonomic Update
 // nonHolonomicUpdate();
-std::cout << "vel after nonholo" << '\n' << V_old <<'\n';
-std::cout << "pos after zupt" << '\n' << Pos_old <<'\n';
+// END - nonHolonomic Update
+
+// std::cout << "vel after nonholo" << '\n' << V_old <<'\n';
+// std::cout << "pos after zupt" << '\n' << Pos_old <<'\n';
       // _attitude=Att_old;
       _vel=V_old;
       _pos=Pos_old;
@@ -459,6 +411,32 @@ H_holo.row(1) << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), 
 
 return;
 }
+
+void DekfSensorFusion::calculateProcessNoiseINS(){
+  double sig_gyro_inRun = 1.6*3.14/180/3600; //rad/s -- standard deviation of the gyro dynamic biases
+  double sig_ARW = 10*(3.14/180)*sqrt(3600)/3600;; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
+
+  double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
+  double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
+
+  //following 14.2.6 of Groves
+  double Srg= pow(sig_ARW,2)*_dt; // PSD of the gyro noise
+  double Sra= pow(sig_VRW,2)*_dt; // PSD of the acce noise
+  double Sbad=pow(sig_accel_inRun,2)/_dt; // accelerometer bias variation PSD
+  double Sbgd=pow(sig_gyro_inRun,2)/_dt; // gyro bias variation PSD
+
+  //Simplified -> eq 14.82 pg 592
+
+      Eigen::Matrix <double, 15, 15> Q(15,15);
+      Q<<Srg*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Sra*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*_dt*Eigen::Matrix3d::Identity(3,3);
+
+      _Q_ins=Q;
+
+}
 // GPS Update
 void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
@@ -533,7 +511,7 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     // else if(robot_name=="uav2") {
     // _globalP.block(9,9,9,9) =gps_UP;
     // }
-
+      _x << _attitude,_vel,_pos,_error_states.segment(9,6);
 
     // std::cout << "GPS P" << '\n' << gps_UP<< '\n';
     // std::cout << "GPS State" << '\n' << _x << '\n';
@@ -564,8 +542,10 @@ void DekfSensorFusion::relativeUpdate()
       P_corr = P_d12 * P_d21.transpose();
       // state1 = _x; // TODO: Use sent State?
       state1 = state_sent; // Use the state that has been sent
+      err_state1=err_state_sent;
       // std::cout << "State_Sent in Simulate Range" <<'\n'<< state_sent <<'\n';
       state2 = state_received;
+      err_state2=err_state_received;
       P_corr2 = P_corr.transpose();
 
       covariances.block<15,15>(0,0) = P_d1;
@@ -581,8 +561,11 @@ void DekfSensorFusion::relativeUpdate()
     else if (robot_name=="tb3_1") {
       P_corr = P_d21 * P_d12.transpose();
       state1 = state_received;
+      err_state1 = err_state_received;
+
       // state2 =_x; //
       state2 = state_sent; // Use the state that has been sent.
+      err_state2 = err_state_sent;
       // std::cout << "State_Sent in Simulate Range" <<'\n'<< state_sent <<'\n';
       P_corr2 = P_corr.transpose();
 
@@ -597,6 +580,9 @@ void DekfSensorFusion::relativeUpdate()
     }
 
     states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
+    err_states << err_state1(0),err_state1(1),err_state1(2),err_state1(3),err_state1(4),err_state1(5),err_state1(6),err_state1(7),err_state1(8),err_state1(9),err_state1(10),err_state1(11),err_state1(12),err_state1(13),err_state1(14),err_state2(0),err_state2(1),err_state2(2),err_state2(3),err_state2(4),err_state2(5),err_state2(6),err_state2(7),err_state2(8),err_state2(9),err_state2(10),err_state2(11),err_state2(12),err_state2(13),err_state2(14);
+
+    // std::cout << "statesBef" <<'\n'<< states  <<'\n';
 
     // std::cout << "Global P" << '\n' << _globalP <<'\n';
     // std::cout << "Relative P" << '\n' << covariances <<'\n';
@@ -630,40 +616,52 @@ void DekfSensorFusion::relativeUpdate()
       MatrixXd I30(30,30);
       I30.setIdentity();
 
-      states = states + K_range*(_range - H_range*states);
-      // std::cout << "states1" <<'\n'<< states + K_range*res_range <<'\n';
+      err_states = err_states + K_range*(_range - H_range*err_states); //error_states
+
+      // std::cout << "statesAFt" <<'\n'<< states  <<'\n';
       // std::cout << "states2" <<'\n'<< states + K_range*(_range - H_range*states) <<'\n';
 
       // states = states + K_range*res_range;
 
       covariances = (I30 - K_range*H_range)*covariances;
+      // covariances = (I30 - K_range*H_range)*covariances*(I30 - K_range*H_range).inverse() + K_range*R_range*K_range.transpose();
+
+      // _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cbn);
+      // _vel = _vel-_error_states.segment(3,3);
+      // _pos = _pos-_error_states.segment(6,3);
 
           if (robot_name=="tb3_0") {
 
 
             // _x = states.segment(0,15);
-            range_est = states.segment(0,15);
-            Matrix3d Cnb = _euler2dcmV(range_est(0),range_est(1),range_est(2));
+            range_est = err_states.segment(0,15); //error_states
+            // Matrix3d Cnb = _euler2dcmV(range_est(0),range_est(1),range_est(2));
+            // Matrix3d Cbn = Cnb.transpose();
+            // std::cout << "range_est" <<'\n'<< range_est  <<'\n';
+
+            Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
             Matrix3d Cbn = Cnb.transpose();
 
-            // _attitude(0) = (0);
-            // _attitude(1) = range_est(1);
-            // _attitude(2) = range_est(2);
             _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
-            _vel(0) = range_est(3);
-            _vel(1) = range_est(4);
-            _vel(2) = range_est(5);
-            _pos(0) = range_est(6);
-            _pos(1) = range_est(7);
-            _pos(2) = range_est(8);
+            _vel(0) = _vel(0)- range_est(3);
+            _vel(1) = _vel(1)- range_est(4);
+            _vel(2) = _vel(2)- range_est(5);
+            _pos(0) = _pos(0)- range_est(6);
+            _pos(1) = _pos(1)- range_est(7);
+            _pos(2) = _pos(2)- range_est(8);
             ba(0) =  range_est(9);
             ba(1) =  range_est(10);
             ba(2) =  range_est(11);
             bg(0) =  range_est(12);
             bg(1) =  range_est(13);
             bg(2) =  range_est(14);
+            err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
+            _error_states<<err_states.segment(0,15);
+            // std::cout << "ErrorstatesAfterUpt" <<'\n'<< states  <<'\n';
 
             _x << _attitude,_vel,_pos,ba,bg;
+            // std::cout << "statesAfterUpt" <<'\n'<< _x   <<'\n';
+
 
             _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
             _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
@@ -684,25 +682,30 @@ void DekfSensorFusion::relativeUpdate()
 
 
             // _x = states.segment(15,15);
-            range_est = states.segment(15,15);
-            Matrix3d Cnb = _euler2dcmV(range_est(0),range_est(1),range_est(2));
+            range_est = err_states.segment(15,15); //errorstates
+            // std::cout << "range_est" <<'\n'<< range_est  <<'\n';
+            Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
             Matrix3d Cbn = Cnb.transpose();
             _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
-            _vel(0) = range_est(3);
-            _vel(1) = range_est(4);
-            _vel(2) = range_est(5);
-            _pos(0) = range_est(6);
-            _pos(1) = range_est(7);
-            _pos(2) = range_est(8);
+            _vel(0) = _vel(0)-range_est(3);
+            _vel(1) = _vel(1)-range_est(4);
+            _vel(2) = _vel(2)- range_est(5);
+            _pos(0) = _pos(0)- range_est(6);
+            _pos(1) = _pos(1)-range_est(7);
+            _pos(2) = _pos(2)- range_est(8);
             ba(0) =  range_est(9);
             ba(1) =  range_est(10);
             ba(2) =  range_est(11);
             bg(0) =  range_est(12);
             bg(1) =  range_est(13);
             bg(2) =  range_est(14);
+            err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
+            _error_states<<err_states.segment(15,15);
+
+            // std::cout << "ErrorstatesAfterUpt" <<'\n'<< states  <<'\n';
 
             _x << _attitude,_vel,_pos,ba,bg;
-
+            // std::cout << "statesAfterUpt" <<'\n'<< _x   <<'\n';
             _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
             _globalP.block<15,15>(15,0) = Eigen::MatrixXd::Identity(15,15);
             // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
@@ -744,13 +747,34 @@ void DekfSensorFusion::SendCovariance()
   bias_.angular.x =     _x[12];
   bias_.angular.y =     _x[13];
   bias_.angular.z =     _x[14];
+  err_pose_.orientation.x = _error_states[0];
+  err_pose_.orientation.y = _error_states[1];
+  err_pose_.orientation.z = _error_states[2];
+  err_twist_.x =            _error_states[3];
+  err_twist_.y =            _error_states[4];
+  err_twist_.z =            _error_states[5];
+  err_pose_.position.x =    _error_states[6];
+  err_pose_.position.y =    _error_states[7];
+  err_pose_.position.z =    _error_states[8];
+  err_bias_.linear.x =      _error_states[9];
+  err_bias_.linear.y =      _error_states[10];
+  err_bias_.linear.z =      _error_states[11];
+  err_bias_.angular.x =     _error_states[12];
+  err_bias_.angular.y =     _error_states[13];
+  err_bias_.angular.z =     _error_states[14];
 
   srv_cov_share.request.poscov.pose = pose_;
   srv_cov_share.request.poscov.twist = twist_;
   srv_cov_share.request.poscov.bias = bias_;
+  srv_cov_share.request.poscov.err_pose = err_pose_;
+  srv_cov_share.request.poscov.err_twist = err_twist_;
+  srv_cov_share.request.poscov.err_bias = err_bias_;
 
   state_sent << pose_.orientation.x,pose_.orientation.y,pose_.orientation.z,twist_.x,twist_.y,twist_.z,pose_.position.x,pose_.position.y,pose_.position.z,bias_.linear.x,bias_.linear.y,bias_.linear.z,bias_.angular.x,bias_.angular.y,bias_.angular.z;
-  // state_sent =_x;
+  err_state_sent << err_pose_.orientation.x,err_pose_.orientation.y,err_pose_.orientation.z,err_twist_.x,err_twist_.y,err_twist_.z,err_pose_.position.x,err_pose_.position.y,err_pose_.position.z,err_bias_.linear.x,err_bias_.linear.y,err_bias_.linear.z,err_bias_.angular.x,err_bias_.angular.y,err_bias_.angular.z;
+
+    // std::cout << "error_states" <<'\n'<< _error_states  <<'\n';
+  // std::cout << "states_Sent" <<'\n'<< state_sent  <<'\n';
 
   MatrixXd sender(15,30);
   std::vector<double> senderV(450);
@@ -803,8 +827,13 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
                  req.poscov.pose.position.x,req.poscov.pose.position.y,req.poscov.pose.position.z,
                  req.poscov.bias.linear.x,req.poscov.bias.linear.y,req.poscov.bias.linear.z,
                  req.poscov.bias.angular.x,req.poscov.bias.angular.y,req.poscov.bias.angular.z;
-                 // state_sent =_x;
 
+  err_state_received << req.poscov.err_pose.orientation.x,req.poscov.err_pose.orientation.y,req.poscov.err_pose.orientation.z,
+                    req.poscov.err_twist.x,req.poscov.err_twist.y,req.poscov.err_twist.z,
+                    req.poscov.err_pose.position.x,req.poscov.err_pose.position.y,req.poscov.err_pose.position.z,
+                    req.poscov.err_bias.linear.x,req.poscov.err_bias.linear.y,req.poscov.err_bias.linear.z,
+                    req.poscov.err_bias.angular.x,req.poscov.err_bias.angular.y,req.poscov.err_bias.angular.z;
+// std::cout << "states_received" <<'\n'<< state_received  <<'\n';
   // pose_=req.poscov.pose;
   // res.result=pose_.position.x + pose_.position.y + pose_.position.z;
   // res.success= true;
