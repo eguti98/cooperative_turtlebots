@@ -294,7 +294,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // END - CALCULATE Q
     _P = STM * _P * STM.transpose() + _Q_ins; // Covariance Matrix
 
-    Matrix3d Cnb = _euler2dcmV(_attitude[0],_attitude[1],_attitude[2]);
+    Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
        // std::cout << "vel before zupt---" << '\n' << V_old <<'\n';
        // std::cout << "pos before zupt" << '\n' << Pos_old <<'\n';
 // START - Zero Update (ZUPT & ZARU)
@@ -354,7 +354,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 void DekfSensorFusion::zeroUpdate(){
 Vector3d z_zaru;
 Vector3d z_zupt;
-Matrix3d Cnb = _euler2dcmV(_attitude[0],_attitude[1],_attitude[2]);
+Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
 // std::cout << "ZUPT" << '\n' << _P <<'\n';
 
         z_zaru = -_imu_gyro.transpose();
@@ -540,9 +540,9 @@ void DekfSensorFusion::relativeUpdate()
     if (robot_name=="tb3_0") {
 
       P_corr = P_d12 * P_d21.transpose();
-      // state1 = _x; // TODO: Use sent State?
-      state1 = state_sent; // Use the state that has been sent
-      err_state1=err_state_sent;
+      state1 = _x; // TODO: Use sent State?
+      // state1 = state_sent; // Use the state that has been sent
+      err_state1=_error_states;
       // std::cout << "State_Sent in Simulate Range" <<'\n'<< state_sent <<'\n';
       state2 = state_received;
       err_state2=err_state_received;
@@ -556,16 +556,18 @@ void DekfSensorFusion::relativeUpdate()
       // std::cout << "/* P_corr2 */" << '\n' << P_corr2 <<'\n';
       covariances.block<15,15>(15,15) = P_d2;
       // std::cout << "/* P_d2 */" << '\n' << P_d2 <<'\n';
-
+      // std::cout << "/* P_d1 */" << '\n' << P_d1 <<'\n';
+      error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
+      ROS_INFO("Error Before Rel Update= %.4f",error);
     }
-    else if (robot_name=="tb3_1") {
+    else if (robot_name=="tb3_1") { //only state2 is the problematic one
       P_corr = P_d21 * P_d12.transpose();
       state1 = state_received;
       err_state1 = err_state_received;
 
-      // state2 =_x; //
-      state2 = state_sent; // Use the state that has been sent.
-      err_state2 = err_state_sent;
+      state2 =_x; //
+      // state2 = state_sent; // Use the state that has been sent.
+      err_state2 = _error_states;
       // std::cout << "State_Sent in Simulate Range" <<'\n'<< state_sent <<'\n';
       P_corr2 = P_corr.transpose();
 
@@ -577,13 +579,24 @@ void DekfSensorFusion::relativeUpdate()
       // std::cout << "/* P_corr2 */" << '\n' << P_corr2 <<'\n';
       covariances.block<15,15>(15,15) = P_d2;
       // std::cout << "/* P_d2 */" << '\n' << P_d2 <<'\n';
+      error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
+      ROS_INFO("Error Before Rel Update= %.4f",error);
     }
 
     states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
     err_states << err_state1(0),err_state1(1),err_state1(2),err_state1(3),err_state1(4),err_state1(5),err_state1(6),err_state1(7),err_state1(8),err_state1(9),err_state1(10),err_state1(11),err_state1(12),err_state1(13),err_state1(14),err_state2(0),err_state2(1),err_state2(2),err_state2(3),err_state2(4),err_state2(5),err_state2(6),err_state2(7),err_state2(8),err_state2(9),err_state2(10),err_state2(11),err_state2(12),err_state2(13),err_state2(14);
 
-    // std::cout << "statesBef" <<'\n'<< states  <<'\n';
-
+    // std::cout << "state1_att" <<'\n'<< state1.segment(0,3)  <<'\n';
+    // std::cout << "state1_vel" <<'\n'<< state1.segment(3,3)  <<'\n';
+    // std::cout << "state1_pos" <<'\n'<< state1.segment(6,3)  <<'\n';
+    // std::cout << "-------" <<'\n';
+    // std::cout << "state2_att" <<'\n'<< state2.segment(0,3)  <<'\n';
+    // std::cout << "state2_vel" <<'\n'<< state2.segment(3,3)  <<'\n';
+    // std::cout << "state2_pos" <<'\n'<< state2.segment(6,3)  <<'\n';
+    // std::cout << "-------" <<'\n';
+    // std::cout << "errstate1" <<'\n'<< err_state1  <<'\n';
+    // std::cout << "errstate2" <<'\n'<< err_state2  <<'\n';
+    // std::cout << "err_states" <<'\n'<< err_states  <<'\n';
     // std::cout << "Global P" << '\n' << _globalP <<'\n';
     // std::cout << "Relative P" << '\n' << covariances <<'\n';
 
@@ -607,6 +620,9 @@ void DekfSensorFusion::relativeUpdate()
 
     res_range = _range - h_range;
 
+    std::cout << "/* Range Residual */" << '\n' << res_range <<'\n';
+    std::cout << "/* _range */" << '\n' << _range <<'\n';
+    std::cout << "/* h_range */" << '\n' << h_range <<'\n';
     if (abs(res_range) > 500.0) {
       return;
 
@@ -616,12 +632,13 @@ void DekfSensorFusion::relativeUpdate()
       MatrixXd I30(30,30);
       I30.setIdentity();
 
-      err_states = err_states + K_range*(_range - H_range*err_states); //error_states
+      // err_states = err_states + K_range*(_range - H_range*err_states); //error_states
+      // states = states + K_range*(_range - H_range*states); //error_states
 
       // std::cout << "statesAFt" <<'\n'<< states  <<'\n';
       // std::cout << "states2" <<'\n'<< states + K_range*(_range - H_range*states) <<'\n';
-
-      // states = states + K_range*res_range;
+//
+      states = states + K_range*res_range;
 
       covariances = (I30 - K_range*H_range)*covariances;
       // covariances = (I30 - K_range*H_range)*covariances*(I30 - K_range*H_range).inverse() + K_range*R_range*K_range.transpose();
@@ -634,7 +651,9 @@ void DekfSensorFusion::relativeUpdate()
 
 
             // _x = states.segment(0,15);
-            range_est = err_states.segment(0,15); //error_states
+            // range_est = err_states.segment(0,15); //error_states
+            range_est = states.segment(0,15); //error_states
+
             // Matrix3d Cnb = _euler2dcmV(range_est(0),range_est(1),range_est(2));
             // Matrix3d Cbn = Cnb.transpose();
             // std::cout << "range_est" <<'\n'<< range_est  <<'\n';
@@ -642,20 +661,29 @@ void DekfSensorFusion::relativeUpdate()
             Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
             Matrix3d Cbn = Cnb.transpose();
 
-            _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
-            _vel(0) = _vel(0)- range_est(3);
-            _vel(1) = _vel(1)- range_est(4);
-            _vel(2) = _vel(2)- range_est(5);
-            _pos(0) = _pos(0)- range_est(6);
-            _pos(1) = _pos(1)- range_est(7);
-            _pos(2) = _pos(2)- range_est(8);
+            // _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
+            // _vel(0) = _vel(0)- range_est(3);
+            // _vel(1) = _vel(1)- range_est(4);
+            // _vel(2) = _vel(2)- range_est(5);
+            // _pos(0) = _pos(0)- range_est(6);
+            // _pos(1) = _pos(1)- range_est(7);
+            // _pos(2) = _pos(2)- range_est(8);
+            _attitude(0)=range_est(0);
+            _attitude(1)=range_est(1);
+            _attitude(2)=range_est(2);
+            _vel(0) = range_est(3);
+            _vel(1) = range_est(4);
+            _vel(2) = range_est(5);
+            _pos(0) = range_est(6);
+            _pos(1) = range_est(7);
+            _pos(2) = range_est(8);
             ba(0) =  range_est(9);
             ba(1) =  range_est(10);
             ba(2) =  range_est(11);
             bg(0) =  range_est(12);
             bg(1) =  range_est(13);
             bg(2) =  range_est(14);
-            err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
+            // err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
             _error_states<<err_states.segment(0,15);
             // std::cout << "ErrorstatesAfterUpt" <<'\n'<< states  <<'\n';
 
@@ -676,30 +704,43 @@ void DekfSensorFusion::relativeUpdate()
             ROS_WARN("Relative Update Done - Range: %.4f",_range);
 
             error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
-            ROS_INFO("Error = %.4f",error);
+            ROS_INFO("Error After Rel Update = %.4f",error);
+            std::cout << "-------" <<'\n';
+
           }
           else if (robot_name=="tb3_1") {
 
 
             // _x = states.segment(15,15);
-            range_est = err_states.segment(15,15); //errorstates
+            // range_est = err_states.segment(15,15); //errorstates
+            range_est = states.segment(15,15); //errorstates
+
             // std::cout << "range_est" <<'\n'<< range_est  <<'\n';
             Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
             Matrix3d Cbn = Cnb.transpose();
-            _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
-            _vel(0) = _vel(0)-range_est(3);
-            _vel(1) = _vel(1)-range_est(4);
-            _vel(2) = _vel(2)- range_est(5);
-            _pos(0) = _pos(0)- range_est(6);
-            _pos(1) = _pos(1)-range_est(7);
-            _pos(2) = _pos(2)- range_est(8);
+            // _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
+            // _vel(0) = _vel(0)-range_est(3);
+            // _vel(1) = _vel(1)-range_est(4);
+            // _vel(2) = _vel(2)- range_est(5);
+            // _pos(0) = _pos(0)- range_est(6);
+            // _pos(1) = _pos(1)-range_est(7);
+            // _pos(2) = _pos(2)- range_est(8);
+            _attitude(0)=range_est(0);
+            _attitude(1)=range_est(1);
+            _attitude(2)=range_est(2);
+            _vel(0) = range_est(3);
+            _vel(1) = range_est(4);
+            _vel(2) = range_est(5);
+            _pos(0) = range_est(6);
+            _pos(1) = range_est(7);
+            _pos(2) = range_est(8);
             ba(0) =  range_est(9);
             ba(1) =  range_est(10);
             ba(2) =  range_est(11);
             bg(0) =  range_est(12);
             bg(1) =  range_est(13);
             bg(2) =  range_est(14);
-            err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
+            // err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
             _error_states<<err_states.segment(15,15);
 
             // std::cout << "ErrorstatesAfterUpt" <<'\n'<< states  <<'\n';
@@ -719,7 +760,9 @@ void DekfSensorFusion::relativeUpdate()
             ROS_WARN("Relative Update Done - Range: %.4f",_range);
 
             error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-            ROS_INFO("Error = %.4f",error);
+            ROS_INFO("Error After Rel Update = %.4f",error);
+            std::cout << "-------" <<'\n';
+
           }
     }
 
@@ -878,7 +921,25 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
   }
 
   if (initializer == 1) {
+    std::cout << "BEFORE REL UPDATE" <<'\n';
+    std::cout << "state1_att" <<'\n'<< state1.segment(0,3)  <<'\n';
+    std::cout << "state1_vel" <<'\n'<< state1.segment(3,3)  <<'\n';
+    std::cout << "state1_pos" <<'\n'<< state1.segment(6,3)  <<'\n';
+    std::cout << "-------" <<'\n';
+    std::cout << "state2_att" <<'\n'<< state2.segment(0,3)  <<'\n';
+    std::cout << "state2_vel" <<'\n'<< state2.segment(3,3)  <<'\n';
+    std::cout << "state2_pos" <<'\n'<< state2.segment(6,3)  <<'\n';
+    std::cout << "-------" <<'\n';
     relativeUpdate();
+    std::cout << "AFTER REL UPDATE" <<'\n';
+    std::cout << "state1_att" <<'\n'<< state1.segment(0,3)  <<'\n';
+    std::cout << "state1_vel" <<'\n'<< state1.segment(3,3)  <<'\n';
+    std::cout << "state1_pos" <<'\n'<< state1.segment(6,3)  <<'\n';
+    std::cout << "-------" <<'\n';
+    std::cout << "state2_att" <<'\n'<< state2.segment(0,3)  <<'\n';
+    std::cout << "state2_vel" <<'\n'<< state2.segment(3,3)  <<'\n';
+    std::cout << "state2_pos" <<'\n'<< state2.segment(6,3)  <<'\n';
+    std::cout << "-------" <<'\n';
   }
   return true;
 }
