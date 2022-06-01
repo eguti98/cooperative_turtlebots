@@ -1,6 +1,6 @@
 <launch>
-  <group ns="tb3_0">
-    <param name="robot_name" value="tb3_0" />
+  <group ns="uav1">
+    <param name="robot_name" value="uav1" />
     <!-- <param name="robot_id" value="1" /> -->
 
     <!-- static transform from odom to map-->
