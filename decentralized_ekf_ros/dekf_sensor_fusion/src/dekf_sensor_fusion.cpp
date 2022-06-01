@@ -12,13 +12,13 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
   dekf_sensor_fusion_service =
   nh.advertiseService("covariance_srv", &DekfSensorFusion::calculation, this);
-  if (robot_name=="uav1") {
+  if (robot_name=="tb3_0") {
     dekf_sensor_fusion_client =
-    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/uav2/covariance_srv");
+    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_1/covariance_srv");
   }
-  else if (robot_name=="uav2") {
+  else if (robot_name=="tb3_1") {
     dekf_sensor_fusion_client =
-    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/uav1/covariance_srv");
+    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_0/covariance_srv");
   }
 
   pubOdom_ = nh_.advertise<nav_msgs::Odometry>(
@@ -31,10 +31,10 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   _Cnb = _euler2dcm(eul);
   _vel << 0,0,0;
 
-  if (robot_name=="uav1") {
+  if (robot_name=="tb3_0") {
     _pos << 0,0,0;
   }
-  else if (robot_name=="uav2") {
+  else if (robot_name=="tb3_1") {
     _pos << 0,0,0;
   }
 
@@ -68,10 +68,10 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   gps_update_done = 0;
   _range= 100; //TODO if the range is not given it starts with '0'
 
-  sub_imu = nh.subscribe("mavros/imu/data_raw", 10, &DekfSensorFusion::imuCallback, this);
-  sub_GPS = nh.subscribe("mavros/global_position/local_throttle", 1, &DekfSensorFusion::gpsCallback,this); ///uav0/mavros/global_position/local // this is not the specific gps topic
-  true_drone1 = nh.subscribe("/truth_iris1", 1, &DekfSensorFusion::true_drone1Callback, this);
-  true_drone2 = nh.subscribe("/truth_iris2", 1, &DekfSensorFusion::true_drone2Callback, this);
+  sub_imu = nh.subscribe("imu", 10, &DekfSensorFusion::imuCallback, this);
+  sub_GPS = nh.subscribe("gps", 1, &DekfSensorFusion::gpsCallback,this); ///uav0/mavros/global_position/local // this is not the specific gps topic
+  true_drone1 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone1Callback, this);
+  true_drone2 = nh.subscribe("/tb3_1/truth", 1, &DekfSensorFusion::true_drone2Callback, this);
 
 }
 
@@ -122,11 +122,11 @@ void DekfSensorFusion::initialization()
 {
 
 if (truths_1==1 && truths_2==1) {
-  if (robot_name == "uav1") {
+  if (robot_name == "tb3_0") {
     _pos << true_position1(0),true_position1(1),true_position1(2);
     initializer = 1;
   }
-  else if (robot_name == "uav2") {
+  else if (robot_name == "tb3_1") {
     _pos << true_position2(0),true_position2(1),true_position2(2);
     initializer = 1;
   }
@@ -157,7 +157,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     double r = -msg->angular_velocity.z;
     double ax= msg->linear_acceleration.x;
     double ay= msg->linear_acceleration.y;
-    double az= msg->linear_acceleration.z;
+    double az= msg->linear_acceleration.z + 9.80665;
     _imu_gyro << p, q, r;
     _imu_acce << ax,ay,az;
 
@@ -230,13 +230,13 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Local P IN MOTION UPDATE" << '\n' << _P <<'\n';
     //Update Global P
 
-    if (robot_name=="uav1") {
+    if (robot_name=="tb3_0") {
       _globalP.block<9,9>(0,0) = _P;
       _globalP.block<9,9>(0,9) = STM*_globalP.block<9,9>(0,9);
       // sigma_ij=STM*sigma_ij; //TODO
       // _globalP.block(0,9,9,9) = sigma_ij;
     }
-    else if (robot_name=="uav2") {
+    else if (robot_name=="tb3_1") {
       _globalP.block<9,9>(9,9) = _P;
       _globalP.block<9,9>(9,0) = STM*_globalP.block<9,9>(9,0);
       // sigma_ij=STM*sigma_ij; //TODO
@@ -244,6 +244,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     }
     publishOdom_();
     publishRange_();
+        // std::cout << " State" << '\n' << _x << '\n';
 
   }
 
@@ -258,13 +259,13 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     Matrix3d Cbn = Cnb.transpose();
     MatrixXd K_gps(9,6);
 
-    if (robot_name=="uav1") {
-      gps_pos[0] = msg->pose.pose.position.x+1;
+    if (robot_name=="tb3_0") {
+      gps_pos[0] = msg->pose.pose.position.x;
       gps_pos[1] = msg->pose.pose.position.y;
     }
-    else if (robot_name=="uav2") {
+    else if (robot_name=="tb3_1") {
       gps_pos[0] = msg->pose.pose.position.x;
-      gps_pos[1] = msg->pose.pose.position.y+1;
+      gps_pos[1] = msg->pose.pose.position.y;
     }
     gps_pos[2] = msg->pose.pose.position.z;
 
@@ -279,20 +280,21 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     z_gps <<  z_gps_vel[0],z_gps_vel[1],z_gps_vel[2],z_gps_pos[0],z_gps_pos[1],z_gps_pos[2];
     _x = _x + K_gps * (z_gps  - H_gps * _x);
 
-    _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_x.segment(0,3)))*Cbn);
+    _attitude = _x.segment(0,3);
+    // _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_x.segment(0,3)))*Cbn);
     _vel = _x.segment(3,3);
     _pos = _x.segment(6,3);
 
     _P=(Eigen::MatrixXd::Identity(9,9) - K_gps * H_gps) * _P * ( Eigen::MatrixXd::Identity(9,9) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
 
 
-    if (robot_name=="uav1") {
+    if (robot_name=="tb3_0") {
       _globalP.block<9,9>(0,0) = _P;
       _globalP.block<9,9>(0,9) = (Eigen::MatrixXd::Identity(9,9) - K_gps * H_gps) * _globalP.block<9,9>(0,9) * ( Eigen::MatrixXd::Identity(9,9) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
       // sigma_ij=(Eigen::MatrixXd::Identity(9,9)-K_gps*H_gps)*sigma_ij; //TODO
       // _globalP.block(0,9,9,9) = sigma_ij;
     }
-    else if (robot_name=="uav2") {
+    else if (robot_name=="tb3_1") {
       _globalP.block<9,9>(9,9) = _P;
       _globalP.block<9,9>(9,0) = (Eigen::MatrixXd::Identity(9,9) - K_gps * H_gps) * _globalP.block<9,9>(9,0) * ( Eigen::MatrixXd::Identity(9,9) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
 
@@ -306,10 +308,10 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     gps_Upos=_pos;
     gps_UP=_P;
 
-    // if (robot_name=="uav1") {
+    // if (robot_name=="tb3_0") {
     // _globalP.block(0,0,9,9) =gps_UP;
     // }
-    // else if(robot_name=="uav2") {
+    // else if(robot_name=="tb3_1") {
     // _globalP.block(9,9,9,9) =gps_UP;
     // }
 
@@ -317,7 +319,7 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     // std::cout << "GPS P" << '\n' << gps_UP<< '\n';
     // std::cout << "GPS State" << '\n' << _x << '\n';
     gps_update_done = 1;
-
+        // std::cout << " State" << '\n' << _x << '\n';
     // publishOdom_();
     publishRange_();
     publishResidual_();
@@ -338,7 +340,7 @@ void DekfSensorFusion::relativeUpdate()
     P_d21 = _globalP.block<9,9>(9,0); //Sigma_ij.transpose() or Sigma_ji ?
     P_d2 = _globalP.block<9,9>(9,9);  //Sigma_jj
 
-    if (robot_name=="uav1") {
+    if (robot_name=="tb3_0") {
 
       P_corr = P_d12 * P_d21.transpose();
       // state1 = _x; // TODO: Use sent State?
@@ -357,7 +359,7 @@ void DekfSensorFusion::relativeUpdate()
       // std::cout << "/* P_d2 */" << '\n' << P_d2 <<'\n';
 
     }
-    else if (robot_name=="uav2") {
+    else if (robot_name=="tb3_1") {
       P_corr = P_d21 * P_d12.transpose();
       state1 = state_received;
       // state2 =_x; //
@@ -397,7 +399,7 @@ void DekfSensorFusion::relativeUpdate()
     K_range = covariances * H_range.transpose() * S.inverse();
 
     res_range = _range - h_range;
-
+    std::cout << "residual"<< res_range << '\n';
     if (abs(res_range) > 500.0) {
       return;
 
@@ -407,15 +409,15 @@ void DekfSensorFusion::relativeUpdate()
       MatrixXd I18(18,18);
       I18.setIdentity();
 
-      states = states + K_range*(_range - H_range*states);
+      // states = states + K_range*(_range - H_range*states);
       // std::cout << "states1" <<'\n'<< states + K_range*res_range <<'\n';
       // std::cout << "states2" <<'\n'<< states + K_range*(_range - H_range*states) <<'\n';
 
-      // states = states + K_range*res_range;
+      states = states + K_range*res_range;
 
       covariances = (I18 - K_range*H_range)*covariances;
 
-          if (robot_name=="uav1") {
+          if (robot_name=="tb3_0") {
 
 
             // _x = states.segment(0,9);
@@ -423,10 +425,10 @@ void DekfSensorFusion::relativeUpdate()
             Matrix3d Cnb = _euler2dcm(range_est.segment(0,3));
             Matrix3d Cbn = Cnb.transpose();
 
-            // _attitude(0) = (0);
-            // _attitude(1) = range_est(1);
-            // _attitude(2) = range_est(2);
-            _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
+            _attitude(0) = range_est(0);
+            _attitude(1) = range_est(1);
+            _attitude(2) = range_est(2);
+            // _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
             _vel(0) = range_est(3);
             _vel(1) = range_est(4);
             _vel(2) = range_est(5);
@@ -448,16 +450,21 @@ void DekfSensorFusion::relativeUpdate()
             ROS_WARN("Relative Update Done");
 
             error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
-            ROS_INFO("Error = %.4f",error);
+                    // std::cout << " State" << '\n' << _x << '\n';
+            ROS_INFO("Error = %.6f",error);
           }
-          else if (robot_name=="uav2") {
+          else if (robot_name=="tb3_1") {
 
 
             // _x = states.segment(9,9);
             range_est = states.segment(9,9);
             Matrix3d Cnb = _euler2dcm(range_est.segment(0,3));
             Matrix3d Cbn = Cnb.transpose();
-            _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
+
+            _attitude(0) = range_est(0);
+            _attitude(1) = range_est(1);
+            _attitude(2) = range_est(2);
+            // _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(range_est.segment(0,3)))*Cbn);
             _vel(0) = range_est(3);
             _vel(1) = range_est(4);
             _vel(2) = range_est(5);
@@ -479,7 +486,7 @@ void DekfSensorFusion::relativeUpdate()
             ROS_WARN("Relative Update Done");
 
             error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-            ROS_INFO("Error = %.4f",error);
+            ROS_INFO("Error = %.6f",error);
           }
     }
 
@@ -490,8 +497,8 @@ void DekfSensorFusion::relativeUpdate()
 void DekfSensorFusion::SendCovariance()
 {
 
-  ROS_INFO("Global P: \n");
-  std::cout << _globalP << '\n';
+  // ROS_INFO("Global P: \n");
+  // std::cout << _globalP << '\n';
 
   dekf_sensor_fusion::SrvCov srv_cov_share;
 
@@ -514,11 +521,11 @@ void DekfSensorFusion::SendCovariance()
   MatrixXd sender(9,18);
   std::vector<double> senderV(172);
 
-  if (robot_name=="uav1") {
+  if (robot_name=="tb3_0") {
     sender = _globalP.block<9,18>(0,0);
     // std::cout << "sender in send covariance" << '\n' << sender << '\n';
   }
-  else if (robot_name=="uav2") {
+  else if (robot_name=="tb3_1") {
     sender = _globalP.block<9,18>(9,0);
     // std::cout << "sender in send covariance" << '\n' << sender << '\n';
   }
@@ -536,7 +543,15 @@ void DekfSensorFusion::SendCovariance()
 
   if(!dekf_sensor_fusion_client.call(srv_cov_share))
   {
-ROS_ERROR("Failed to call service SrvCov");
+     ROS_ERROR("Failed to call service SrvCov");
+    if (robot_name=="tb3_0") {
+      error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
+      ROS_INFO("Error = %.6f",error);
+    }
+    else if (robot_name=="tb3_1") {
+      error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
+      ROS_INFO("Error = %.6f",error);
+    }
   }
 }
 
@@ -561,7 +576,7 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
   }
 
 
-  if (robot_name=="uav1") {
+  if (robot_name=="tb3_0") {
   _globalP.block<9,18>(9,0) << receivedCov;
   // std::cout << "receiver in calculation" << '\n' << receivedCov << '\n';
 
@@ -575,7 +590,7 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
   // std::cout << "Global P" << '\n' << _globalP <<'\n';
 
   }
-  else if (robot_name=="uav2") {
+  else if (robot_name=="tb3_1") {
   _globalP.block<9,18>(0,0) << receivedCov;
 
   // std::cout << "receiver in calculation" << '\n' << receivedCov << '\n';
