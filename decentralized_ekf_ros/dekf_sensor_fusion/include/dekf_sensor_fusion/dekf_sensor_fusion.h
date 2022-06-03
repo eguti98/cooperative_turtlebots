@@ -31,8 +31,8 @@ public:
   Eigen::Matrix <double, 15, 1>  state_sent;
   Eigen::Matrix <double, 15, 1>  err_state_received;
   Eigen::Matrix <double, 15, 1>  err_state_sent;
-  Eigen::Matrix <double, 3, 1>  true_position1;
-  Eigen::Matrix <double, 3, 1>  true_position2;
+  Eigen::Matrix <double, 6, 1>  true_position1;
+  Eigen::Matrix <double, 6, 1>  true_position2;
   Eigen::Matrix <double, 15, 1>  range_est;
   // Eigen::Matrix <double, 15, 15>  range_cov;
   Eigen::Matrix <double, 15, 1> state1;
@@ -49,6 +49,7 @@ public:
   Eigen::Matrix <double, 15, 15> P_corr2;
   Eigen::Matrix <double, 15, 15> sigma_ij;
   Eigen::Matrix <double, 15, 15> sigma_ji;
+    Eigen::Matrix <double, 15, 1> _error_states;
   typedef Eigen::Matrix<double, 15, 1> Vector15;
   typedef Eigen::Matrix<double, 3, 1> Vector3;
   Vector3d V_old;
@@ -92,7 +93,7 @@ private:
   geometry_msgs::Point32 err_twist_;
   Eigen::Matrix <double, 15, 15> P_;
   Eigen::Matrix <double, 15, 1> _x;
-  Eigen::Matrix <double, 15, 1> _error_states;
+
   Eigen::Matrix <double, 15, 15> _P;
   Eigen::Matrix <double, 15, 15> _P_init;
   Eigen::Matrix <double, 15, 15> gps_UP;
