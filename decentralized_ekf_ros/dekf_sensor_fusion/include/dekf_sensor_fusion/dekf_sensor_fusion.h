@@ -29,8 +29,8 @@ public:
   std::string robot_name;
   Eigen::Matrix <double, 9, 1>  state_received;
   Eigen::Matrix <double, 9, 1>  state_sent;
-  Eigen::Matrix <double, 3, 1>  true_position1;
-  Eigen::Matrix <double, 3, 1>  true_position2;
+  Eigen::Matrix <double, 6, 1>  true_position1;
+  Eigen::Matrix <double, 6, 1>  true_position2;
   Eigen::Matrix <double, 9, 1>  range_est;
   // Eigen::Matrix <double, 9, 9>  range_cov;
   Eigen::Matrix <double, 9, 1> state1;
@@ -86,6 +86,7 @@ private:
   Eigen::Matrix <double, 6, 6> R_gps;
   Eigen::Matrix <double, 1, 1> R_range;
   Eigen::Matrix <double, 1, 18> H_range;
+  // Eigen::Matrix <double, 6, 3> G; 
 
   // VectorXd state1(9,1);
   // VectorXd state2(9,1);

@@ -60,7 +60,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   R_gpsVal << std::pow(0.1,2), std::pow(0.1,2), std::pow(0.1,2), std::pow(0.4,2), std::pow(0.4,2), std::pow(0.4,2);
   R_gps = R_gpsVal.asDiagonal();
 
-  R_range << 0.2*0.2; // TODO: Value?
+  R_range << 0.01*0.01; // TODO: Value?
   initializer = 0;
   truths_1 = 0;
   truths_2 = 0;
@@ -91,7 +91,7 @@ void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &m
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  true_position1 << x,y,z;
+  true_position1 << x,y,z,roll,pitch,yaw;
   truths_1 = 1;
 
 }
@@ -112,7 +112,7 @@ void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &m
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  true_position2 << x,y,z;
+  true_position2 << x,y,z,roll,pitch,yaw;
   truths_2 = 1;
 
 }
@@ -124,10 +124,12 @@ void DekfSensorFusion::initialization()
 if (truths_1==1 && truths_2==1) {
   if (robot_name == "tb3_0") {
     _pos << true_position1(0),true_position1(1),true_position1(2);
+    _attitude << true_position1(3),true_position1(4),true_position1(5);
     initializer = 1;
   }
   else if (robot_name == "tb3_1") {
     _pos << true_position2(0),true_position2(1),true_position2(2);
+    _attitude << true_position1(3),true_position1(4),true_position1(5);
     initializer = 1;
   }
 }
@@ -153,8 +155,8 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     _t = _time.toSec();
 
     double p = msg->angular_velocity.x;
-    double q = -msg->angular_velocity.y;
-    double r = -msg->angular_velocity.z;
+    double q = msg->angular_velocity.y;
+    double r = msg->angular_velocity.z;
     double ax= msg->linear_acceleration.x;
     double ay= msg->linear_acceleration.y;
     double az= msg->linear_acceleration.z + 9.80665;
@@ -211,7 +213,23 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // matrix.block(i,j,p,q)  dynamic size block expression
     // matrix.block<p,q>(i,j) fixed size block expression
     Eigen::Matrix <double, 9, 9> F = Eigen::MatrixXd::Zero(9,9);
-    F.block<3,3>(3,0) = _skewsym(-_Cnb.transpose()*_imu_acce);
+    // F.block<3,3>(3,0) = _skewsym(-_Cnb.transpose()*_imu_acce);
+
+    F(0,0) = tan(_x(1))*(q*cos(_x(0))-r*sin(_x(0)));
+    F(0,1) = (1/(cos(_x(1))*cos(_x(1))))*(q*sin(_x(0))+r*(cos(_x(0))));
+    F(1,0) = -(q*sin(_x(0))+r*cos(_x(0)));
+    F(2,0) = q*cos(_x(0))-r*sin(_x(0));
+    F(2,1) = ((1/(cos(_x(1))*cos(_x(1))))*(sin(_x(1))/cos(_x(1))))*(q*sin(_x(0))+r*cos(_x(0))) ;
+
+    F(3,0) = (sin(_x(2))*sin(_x(0))+cos(_x(2))*sin(_x(1))*cos(_x(0)))*ay + (sin(_x(2))*sin(_x(0))-cos(_x(2))*sin(_x(1))*cos(_x(0)))*az;
+    F(3,1) = (-cos(_x(2))*sin(_x(1)))*ax + (cos(_x(2))*cos(_x(1))*sin(_x(0)))*ay +(cos(_x(2))*cos(_x(1))*cos(_x(0)))*az;
+    F(3,2) = (-sin(_x(2))*cos(_x(1)))*ax - (cos(_x(2))*cos(_x(0))+sin(_x(2))*sin(_x(1))*sin(_x(0)))*ay + (cos(_x(2))*sin(_x(0))-sin(_x(2))*sin(_x(1))*cos(_x(0)))*az;
+    F(4,0) = (-cos(_x(2))*sin(_x(0))+sin(_x(2))*sin(_x(1))*cos(_x(0)))*ay - (cos(_x(2))*cos(_x(0))+sin(_x(2))*sin(_x(1))*sin(_x(0)))*az;
+    F(4,1) = (-sin(_x(2))*sin(_x(1)))*ax + (sin(_x(2))*cos(_x(1))*sin(_x(0)))*ay +(sin(_x(2))*cos(_x(1))*sin(_x(0)))*az;
+    F(4,2) = (cos(_x(2))*cos(_x(1)))*ax +(-sin(_x(2))*cos(_x(0))+cos(_x(2))*sin(_x(1))*sin(_x(0)))*ay + (sin(_x(2))*sin(_x(0))+cos(_x(2))*sin(_x(1))*cos(_x(0)))*az;
+    F(5,0) = (cos(_x(1))*cos(_x(0)))*ay - (cos(_x(1))*sin(_x(0)))*az;
+    F(5,1) = cos(_x(1))*ax + (sin(_x(1))*sin(_x(0)))*ay + (sin(_x(1)*cos(_x(0))))*az;
+
 
     MatrixXd I3(3, 3);
     I3.setIdentity();
@@ -224,9 +242,29 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // publishOdom_();
     // publishRange_();
     // publishResidual_();
+
     _x= STM*_x; //State
     // std::cout << "/* IMU STATE after STM */" << '\n' << _x << '\n';
-    _P = STM * _P * STM.transpose() + _Q_ins; // Covariance Matrix
+
+    Eigen::Matrix <double, 9, 3> G = Eigen::MatrixXd::Zero(9,3);
+    G(0,0) = _dt;
+    G(0,1) = (sin(_x(0))*tan(_x(0)))*_dt;
+    G(0,2) = (cos(_x(0))*tan(_x(0)))*_dt;
+    G(1,0) = 0;
+    G(1,1) = cos(_x(0))*_dt;
+    G(1,2) = -sin(_x(0))*_dt;
+    G(2,0) = 0;
+    G(2,1) = (sin(_x(0))/cos(_x(1)))*_dt;
+    G(2,2) = (cos(_x(0))/cos(_x(1)))*_dt;
+
+    // Eigen::Matrix <double,3,3> Q;
+    // Q_att << pow(0.05,2),0,0,
+    //          0,pow(0.05,2),0,
+    //          0,0,pow(0.05,2);
+
+    _P = STM * _P * STM.transpose() + _Q_ins;
+    // _P = STM * _P * STM.transpose() + G*_Q_ins*G.transpose(); // Covariance Matrix
+
     // std::cout << "Local P IN MOTION UPDATE" << '\n' << _P <<'\n';
     //Update Global P
 
