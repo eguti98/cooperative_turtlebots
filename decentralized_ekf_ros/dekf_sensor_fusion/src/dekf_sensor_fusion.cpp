@@ -15,6 +15,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   if (robot_name=="tb3_0") {
     dekf_sensor_fusion_client =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_1/covariance_srv");
+
   }
   else if (robot_name=="tb3_1") {
     dekf_sensor_fusion_client =
@@ -74,8 +75,8 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   R_zero << std::pow(0.01,2),0,0,0,0,0,
             0,std::pow(0.01,2),0,0,0,0,
             0,0,std::pow(0.0025,2),0,0,0,
-            0,0,0,std::pow(0.02,2),0,0,
-            0,0,0,0,std::pow(0.02,2),0,
+            0,0,0,std::pow(0.1,2),0,0,
+            0,0,0,0,std::pow(0.1,2),0,
             0,0,0,0,0,std::pow(1.0,2);
 
   // NON HOLONONOMIC R VALUES
@@ -177,6 +178,7 @@ void DekfSensorFusion::vel_command_tb1Callback(const geometry_msgs::Twist::Const
   double angular = msg->angular.z;
 
   zupt_command_1 << linear,angular;
+  // std::cout << "/* zupt command in callback */" << zupt_command_1<<'\n';
 
 }
 
@@ -188,7 +190,6 @@ void DekfSensorFusion::vel_command_tb2Callback(const geometry_msgs::Twist::Const
   double angular = msg->angular.z;
 
   zupt_command_2 << linear,angular;
-
 }
 
 // IMU Prediction
@@ -268,30 +269,26 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       // END - CALCULATE Q
       _P = STM * _P * STM.transpose() + _Q_ins; // Covariance Matrix
 
-  // START - Zero Update (ZUPT & ZARU)
-  if (robot_name=="tb3_0") {
-    // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
-    // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
-    if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
-      zeroUpdate();
-      nonHolonomicUpdate();
-      // ROS_INFO("Zero Update Done");
-    }
-  }
-  else if (robot_name=="tb3_1") {
-    // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
-    // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
-    if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
-      // zeroUpdate();
-      // nonHolonomicUpdate();
-      // ROS_INFO("Zero Update Done");
-    }
-  }
-  // END - Zero Update (ZUPT & ZARU)
+  // // START - Zero Update (ZUPT & ZARU)
+  // if (robot_name=="tb3_0") {
+  //   // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
+  //   // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
+  //   if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
+  //     // zeroUpdate();
+  //     // nonHolonomicUpdate();
+  //     // ROS_INFO("Zero Update Done");
+  //   }
+  // }
+  // else if (robot_name=="tb3_1") {
+  //   // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
+  //   // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
+  //   if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
+  //     // zeroUpdate();
+  //     // nonHolonomicUpdate();
+  //     // ROS_INFO("Zero Update Done");
+  //   }
+  // }
 
-  // START - nonHolonomic Update
-  // nonHolonomicUpdate();
-  // END - nonHolonomic Update
 
 
         // _attitude=Att_old;
@@ -306,7 +303,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       else if (robot_name=="tb3_1") {
         _globalP.block<15,15>(15,15) = _P;
         _globalP.block<15,15>(15,0) = STM*_globalP.block<15,15>(15,0);
-      }
+
 
       ba(0)=ba(0)+_error_states(9);
       ba(1)=ba(1)+_error_states(10);
@@ -314,7 +311,28 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       bg(0)=bg(0)+_error_states(12);
       bg(1)=bg(1)+_error_states(13);
       bg(2)=bg(2)+_error_states(14);
+    }
+    // START - Zero Update (ZUPT & ZARU)
+    if (robot_name=="tb3_0") {
+      // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
+      // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
+      // std::cout << "/* zupt command in prop */" << zupt_command_1<<'\n';
 
+      if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
+        zeroUpdate();
+        // nonHolonomicUpdate();
+        // ROS_INFO("Zero Update Done");
+      }
+    }
+    else if (robot_name=="tb3_1") {
+      // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
+      // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
+      if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
+        // zeroUpdate();
+        // nonHolonomicUpdate();
+        // ROS_INFO("Zero Update Done");
+      }
+    }
 
       _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
       _error_states.segment(9,6)<<Eigen::VectorXd::Zero(6);
@@ -499,9 +517,9 @@ void DekfSensorFusion::relativeUpdate()
       state1 = _x; // Use current total state
       err_state1=_error_states;
       state2 = state_received;
-      state2(6) = 0;
-      state2(7) = 0;
-      state2(8) = 0;
+      // state2(6) = 0;
+      // state2(7) = 0;
+      // state2(8) = 0;
       err_state2=err_state_received;
       // state1 = state_sent; // Use the total state that has been sent
 
@@ -516,9 +534,9 @@ void DekfSensorFusion::relativeUpdate()
     else if (robot_name=="tb3_1") { //only state2 is the problematic one
       P_corr = P_d21 * P_d12.transpose();
       state1 = state_received;
-      state1(6) = -1;
-      state1(7) = -0.14;
-      state1(8) = 0;
+      // state1(6) = -1;
+      // state1(7) = -0.14;
+      // state1(8) = 0;
       err_state1 = err_state_received;
       state2 =_x; // Use current total state
       err_state2 = _error_states;
