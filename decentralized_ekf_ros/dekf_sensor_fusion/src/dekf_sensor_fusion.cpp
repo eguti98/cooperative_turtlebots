@@ -67,6 +67,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
   R_range << 0.2*0.2; // TODO: Value?
   initializer = 0;
+  truths_0 = 0;
   truths_1 = 0;
   truths_2 = 0;
   relative_update_done = 0;
@@ -105,10 +106,33 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
   sub_imu = nh.subscribe("imu", 10, &DekfSensorFusion::imuCallback, this);
   sub_GPS = nh.subscribe("gps", 1, &DekfSensorFusion::gpsCallback,this); ///uav0/mavros/global_position/local // this is not the specific gps topic
-  true_drone1 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone1Callback, this);
-  true_drone2 = nh.subscribe("/tb3_1/truth", 1, &DekfSensorFusion::true_drone2Callback, this);
-  vel_command_tb1 = nh.subscribe("/tb3_0/cmd_vel", 1, &DekfSensorFusion::vel_command_tb1Callback, this);
-  vel_command_tb2 = nh.subscribe("/tb3_1/cmd_vel", 1, &DekfSensorFusion::vel_command_tb2Callback, this);
+  true_drone0 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone0Callback, this);
+  true_drone1 = nh.subscribe("/tb3_1/truth", 1, &DekfSensorFusion::true_drone1Callback, this);
+  true_drone2 = nh.subscribe("/tb3_2/truth", 1, &DekfSensorFusion::true_drone2Callback, this);
+  vel_command_tb0 = nh.subscribe("/tb3_0/cmd_vel", 1, &DekfSensorFusion::vel_command_tb0Callback, this);
+  vel_command_tb1 = nh.subscribe("/tb3_1/cmd_vel", 1, &DekfSensorFusion::vel_command_tb1Callback, this);
+  vel_command_tb2 = nh.subscribe("/tb3_2/cmd_vel", 1, &DekfSensorFusion::vel_command_tb2Callback, this);
+}
+
+// True position for drone 0
+void DekfSensorFusion::true_drone0Callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+
+  double x = msg->pose.pose.position.x;
+  double y = msg->pose.pose.position.y;
+  double z = msg->pose.pose.position.z;
+  double orientx = msg->pose.pose.orientation.x;
+  double orienty = msg->pose.pose.orientation.y;
+  double orientz = msg->pose.pose.orientation.z;
+  double orientw = msg->pose.pose.orientation.w;
+  tf::Quaternion q(orientx,orienty,orientz,orientw);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+
+  true_position0 << x,y,z,roll,pitch,yaw;
+  truths_0 = 1;
+
 }
 
 // True position for drone 1
@@ -157,20 +181,37 @@ void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &m
 void DekfSensorFusion::initialization()
 {
 
-if (truths_1==1 && truths_2==1) {
+if (truths_0==1 && truths_1==1 && truths_2==1) {
   if (robot_name == "tb3_0") {
+    _pos << true_position0(0),true_position0(1),true_position0(2);
+    _attitude << true_position0(3),true_position0(4),true_position0(5);
+    _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
+    initializer = 1;
+  }
+  else if (robot_name == "tb3_1") {
     _pos << true_position1(0),true_position1(1),true_position1(2);
     _attitude << true_position1(3),true_position1(4),true_position1(5);
     _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
     initializer = 1;
   }
-  else if (robot_name == "tb3_1") {
+  else if (robot_name == "tb3_2") {
     _pos << true_position2(0),true_position2(1),true_position2(2);
     _attitude << true_position2(3),true_position2(4),true_position2(5);
     _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
     initializer = 1;
   }
 }
+}
+
+// Command velocity for turtlebot 0
+void DekfSensorFusion::vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
+
+  double linear = msg->linear.x;
+  double angular = msg->angular.z;
+
+  zupt_command_0 << linear,angular;
+
 }
 
 // Command velocity for turtlebot 1
@@ -277,9 +318,9 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
-      zeroUpdate();
-      nonHolonomicUpdate();
-      // ROS_INFO("Zero Update Done");
+      // zeroUpdate();
+      // nonHolonomicUpdate();
+      // // ROS_INFO("Zero Update Done");
     }
   }
   else if (robot_name=="tb3_1") {
@@ -503,9 +544,9 @@ void DekfSensorFusion::relativeUpdate()
       state1 = _x; // Use current total state
       err_state1=_error_states;
       state2 = state_received;
-      state2(6) = 0;
-      state2(7) = 0;
-      state2(8) = 0;
+      // state2(6) = 0;
+      // state2(7) = 0;
+      // state2(8) = 0;
       err_state2=err_state_received;
       // state1 = state_sent; // Use the total state that has been sent
 
@@ -520,9 +561,9 @@ void DekfSensorFusion::relativeUpdate()
     else if (robot_name=="tb3_1") { //only state2 is the problematic one
       P_corr = P_d21 * P_d12.transpose();
       state1 = state_received;
-      state1(6) = -1;
-      state1(7) = -0.14;
-      state1(8) = 0;
+      // state1(6) = -1;
+      // state1(7) = -0.14;
+      // state1(8) = 0;
       err_state1 = err_state_received;
       state2 =_x; // Use current total state
       err_state2 = _error_states;
@@ -1048,7 +1089,7 @@ int main(int argc, char **argv)
 
 
 
-    if (dekf_sensor_fusion.initializer == 0 && dekf_sensor_fusion.truths_1 == 1 && dekf_sensor_fusion.truths_2 == 1) {
+    if (dekf_sensor_fusion.initializer == 0 && dekf_sensor_fusion.truths_0 == 1 && dekf_sensor_fusion.truths_1 == 1 && dekf_sensor_fusion.truths_2 == 1) {
       dekf_sensor_fusion.initialization();
     }
     if (dekf_sensor_fusion.initializer == 1){

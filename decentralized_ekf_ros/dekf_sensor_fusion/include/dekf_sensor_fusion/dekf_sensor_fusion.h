@@ -32,8 +32,10 @@ public:
   Eigen::Matrix <double, 15, 1>  state_sent;
   Eigen::Matrix <double, 15, 1>  err_state_received;
   Eigen::Matrix <double, 15, 1>  err_state_sent;
+  Eigen::Matrix <double, 6, 1>  true_position0;
   Eigen::Matrix <double, 6, 1>  true_position1;
   Eigen::Matrix <double, 6, 1>  true_position2;
+  Eigen::Matrix <double, 2, 1>  zupt_command_0;
   Eigen::Matrix <double, 2, 1>  zupt_command_1;
   Eigen::Matrix <double, 2, 1>  zupt_command_2;
   Eigen::Matrix <double, 15, 1>  range_est;
@@ -59,6 +61,7 @@ public:
   Vector3d Pos_old;
 
   bool initializer;
+  bool truths_0;
   bool truths_1;
   bool truths_2;
   bool stop_propation;
@@ -83,8 +86,10 @@ private:
   ros::Subscriber sub_Range; //Subscribe to Range data
   ros::Subscriber sub_Altimeter; //Subscribe to Altimeter data
   ros::Subscriber sub_Bearing; //Subscribe to Bearing data
+  ros::Subscriber true_drone0; //Subscribes to truth position from drone0
   ros::Subscriber true_drone1; //Subscribes to truth position from drone1
   ros::Subscriber true_drone2; //Subscribes to truth position from drone2
+  ros::Subscriber vel_command_tb0;  //Subscribes to velocity command from turtlebot 0
   ros::Subscriber vel_command_tb1;  //Subscribes to velocity command from turtlebot 1
   ros::Subscriber vel_command_tb2;  //Subscribes to velocity command from turtlebot 2
 
@@ -192,8 +197,10 @@ private:
   void voCallback(const nav_msgs::Odometry::ConstPtr &msg);
   void gpsCallback(const nav_msgs::Odometry::ConstPtr& msg);       // TODO: Fill this with GPS message type based on what sensor used.
   // void rangeCallback(const sensor_msgs::Range::ConstPtr &msg);
+  void true_drone0Callback(const nav_msgs::Odometry::ConstPtr& msg);
   void true_drone1Callback(const nav_msgs::Odometry::ConstPtr& msg);
   void true_drone2Callback(const nav_msgs::Odometry::ConstPtr& msg);
+  void vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr& msg);
   void vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr& msg);
   void vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr& msg);
 
