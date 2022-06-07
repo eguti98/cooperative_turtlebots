@@ -30,8 +30,8 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   eul<< 0.0,0.0,0.0;
   _Cnb = _euler2dcm(eul);
   _vel << 0,0,0;
-  ba << 2e-11,3e-11,5.7e-11;  // TODO: Check values later
-  bg << -3.64e-05,0.000142,1.51e-05;  // TODO: Check values later
+  ba << 0,0,0;  // TODO: Check values later
+  bg << 0,0,0;  // TODO: Check values later
 
   if (robot_name=="tb3_0") {
     _pos << 0,0,0;
@@ -67,7 +67,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   truths_2 = 0;
   relative_update_done = 0;
   gps_update_done = 0;
-  stop_propation = 0;
+  // stop_propation = 0;
   _range= 100; //TODO if the range is not given it starts with '0'
 
 
@@ -196,7 +196,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
 
   if (initializer == 1) {
-    if (stop_propation == 0) {
+    // if (stop_propation == 0) {
       if (_time.toSec() < msg->header.stamp.toSec()) {
         _time = msg->header.stamp;
       }
@@ -273,8 +273,8 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
-      // zeroUpdate();
-      // nonHolonomicUpdate();
+      zeroUpdate();
+      nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
   }
@@ -322,11 +322,11 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       // publishRange_();
       error_im = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
 
-    }
+    // }
 
     publishOdom_();
   }
-
+  // else {return;}
 }
 
 void DekfSensorFusion::zeroUpdate(){ //check again for velocity old vs velocity -as all states
@@ -396,26 +396,32 @@ void DekfSensorFusion::calculateProcessNoiseINS(){
   //
   // double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
   // double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
-  double sig_gyro_inRun = 2.0e-4; //rad/s -- standard deviation of the gyro dynamic biases
-  double sig_ARW = 0.0000008; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
+  double sig_gyro_inRun = 0; //0.0000008; //rad/s -- standard deviation of the gyro dynamic biases
+  double sig_ARW = 2.0e-4; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
 
-  double sig_accel_inRun = 1.7e-2; // m/s -- standard deviation of the accelerometer dynamic biases
-  double sig_VRW = 0.001; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
+  double sig_accel_inRun = 0;//0.001; // m/s -- standard deviation of the accelerometer dynamic biases
+  double sig_VRW = 1.7e-2; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
 
   //following 14.2.6 of Groves
   double Srg= pow(sig_ARW,2)*_dt; // PSD of the gyro noise
   double Sra= pow(sig_VRW,2)*_dt; // PSD of the acce noise
-  double Sbad=pow(sig_accel_inRun,2)/_dt; // accelerometer bias variation PSD
-  double Sbgd=pow(sig_gyro_inRun,2)/_dt; // gyro bias variation PSD
+  double Sbad=pow(sig_accel_inRun,2); // accelerometer bias variation PSD
+  double Sbgd=pow(sig_gyro_inRun,2); // gyro bias variation PSD
 
   //Simplified -> eq 14.82 pg 592
 
       Eigen::Matrix <double, 15, 15> Q(15,15);
-      Q<<Srg*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      Eigen::Matrix3d::Zero(3,3),Sra*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Q<<Srg*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Sra*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*_dt*Eigen::Matrix3d::Identity(3,3);
+
+      Q<<Srg*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Sra*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
       Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
-      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*_dt*Eigen::Matrix3d::Identity(3,3);
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*Eigen::Matrix3d::Identity(3,3);
 
       _Q_ins=Q;
 
@@ -553,11 +559,11 @@ void DekfSensorFusion::relativeUpdate()
     // res_range =0.0;
 
     if (abs(res_range) > 500.0) {
-      return;
-
+      // return;
+      std::cout << "Residual more than 500m" << '\n';
       /* Perform Zupt? */
     }
-    else {
+    // else {
       MatrixXd I30(30,30);
       I30.setIdentity();
 
@@ -677,9 +683,9 @@ void DekfSensorFusion::relativeUpdate()
             ROS_INFO("Error: %.4f",error);
 
           }
-    }
 
-    stop_propation = 0;
+
+    // stop_propation = 0;
     // publishRange_();
 }
 
@@ -729,7 +735,7 @@ void DekfSensorFusion::SendCovariance()
   state_sent << pose_.orientation.x,pose_.orientation.y,pose_.orientation.z,twist_.x,twist_.y,twist_.z,pose_.position.x,pose_.position.y,pose_.position.z,bias_.linear.x,bias_.linear.y,bias_.linear.z,bias_.angular.x,bias_.angular.y,bias_.angular.z;
   err_state_sent << err_pose_.orientation.x,err_pose_.orientation.y,err_pose_.orientation.z,err_twist_.x,err_twist_.y,err_twist_.z,err_pose_.position.x,err_pose_.position.y,err_pose_.position.z,err_bias_.linear.x,err_bias_.linear.y,err_bias_.linear.z,err_bias_.angular.x,err_bias_.angular.y,err_bias_.angular.z;
 
-  stop_propation = 1;
+  // stop_propation = 1;
   // std::cout << "err_states in send cov" <<'\n'<< err_state_sent <<'\n';
 
 
@@ -755,7 +761,7 @@ void DekfSensorFusion::SendCovariance()
 
   if(!dekf_sensor_fusion_client.call(srv_cov_share))
   {
-      stop_propation = 0;
+      // stop_propation = 0;
 ROS_ERROR("Failed to call service - Range: %.4f",_range);
 
 if (robot_name=="tb3_0") {
