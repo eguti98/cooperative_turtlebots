@@ -16,6 +16,7 @@
 #include <nav_msgs/Odometry.h>
 #include "dekf_sensor_fusion/globalCovariance.h"
 #include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
 
 using namespace Eigen;
 class DekfSensorFusion
@@ -39,6 +40,8 @@ public:
   Eigen::Matrix <double, 2, 1>  zupt_command_1;
   Eigen::Matrix <double, 2, 1>  zupt_command_2;
   Eigen::Matrix <double, 15, 1>  range_est;
+  Eigen::Matrix <double, 2, 1>  _range;
+  Eigen::Matrix <double, 2, 1>  range_to_drone;
   // Eigen::Matrix <double, 15, 15>  range_cov;
   Eigen::Matrix <double, 15, 1> state1;
   Eigen::Matrix <double, 15, 1> state2;
@@ -54,7 +57,7 @@ public:
   Eigen::Matrix <double, 15, 15> P_corr2;
   Eigen::Matrix <double, 15, 15> sigma_ij;
   Eigen::Matrix <double, 15, 15> sigma_ji;
-    Eigen::Matrix <double, 15, 1> _error_states;
+  Eigen::Matrix <double, 15, 1> _error_states;
   typedef Eigen::Matrix<double, 15, 1> Vector15;
   typedef Eigen::Matrix<double, 3, 1> Vector3;
   Vector3d V_old;
@@ -67,7 +70,7 @@ public:
   bool stop_propation;
   bool relative_update_done;
   bool gps_update_done;
-  double _range;
+  // double _range;
   double res_range;
   double error_im;
   Matrix3d eye3=Eigen::Matrix3d::Identity();
@@ -156,7 +159,7 @@ private:
 
   double h_range;
   double error;
-  double range_to_drone;
+  // double range_to_drone;
 
   double _dt;
   double _t;
