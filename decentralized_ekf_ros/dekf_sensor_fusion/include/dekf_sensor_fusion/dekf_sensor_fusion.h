@@ -110,7 +110,7 @@ private:
   Eigen::Matrix <double, 15, 15> _P_init;
   Eigen::Matrix <double, 15, 15> gps_UP;
   Eigen::Matrix <double, 15, 15> _Q_ins;
-  Eigen::Matrix <double, 30, 30> _globalP;
+  Eigen::Matrix <double, 45, 45> _globalP;
   Eigen::Matrix <double, 6, 15> H_gps;
   Eigen::Matrix <double, 6, 6> R_gps;
   Eigen::Matrix <double, 1, 1> R_range;
