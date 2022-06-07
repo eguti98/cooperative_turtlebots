@@ -15,16 +15,26 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   if (robot_name=="tb3_0") {
     dekf_sensor_fusion_client =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_1/covariance_srv");
+    dekf_sensor_fusion_client =
+    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_2/covariance_srv");
   }
   else if (robot_name=="tb3_1") {
     dekf_sensor_fusion_client =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_0/covariance_srv");
+    dekf_sensor_fusion_client =
+    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_2/covariance_srv");
+  }
+  else if (robot_name=="tb3_2") {
+    dekf_sensor_fusion_client =
+    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_0/covariance_srv");
+    dekf_sensor_fusion_client =
+    nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_1/covariance_srv");
   }
 
   pubOdom_ = nh_.advertise<nav_msgs::Odometry>(
       "localization/odometry/sensor_fusion", 1);
   pubRange_ = nh_.advertise<std_msgs::Float64>("range",1);
-  pubResidual_ = nh_.advertise<std_msgs::Float64>("residual",1);
+  // pubResidual_ = nh_.advertise<std_msgs::Float64>("residual",1);
 
   Vector3d eul;
   eul<< 0.0,0.0,0.0;
@@ -103,7 +113,6 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
             0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0;
 
 
-
   sub_imu = nh.subscribe("imu", 10, &DekfSensorFusion::imuCallback, this);
   sub_GPS = nh.subscribe("gps", 1, &DekfSensorFusion::gpsCallback,this); ///uav0/mavros/global_position/local // this is not the specific gps topic
   true_drone0 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone0Callback, this);
@@ -113,6 +122,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   vel_command_tb1 = nh.subscribe("/tb3_1/cmd_vel", 1, &DekfSensorFusion::vel_command_tb1Callback, this);
   vel_command_tb2 = nh.subscribe("/tb3_2/cmd_vel", 1, &DekfSensorFusion::vel_command_tb2Callback, this);
 }
+// TRUE POSITION & VEL COMMAND FOR INIT
 
 // True position for drone 0
 void DekfSensorFusion::true_drone0Callback(const nav_msgs::Odometry::ConstPtr &msg)
@@ -134,7 +144,6 @@ void DekfSensorFusion::true_drone0Callback(const nav_msgs::Odometry::ConstPtr &m
   truths_0 = 1;
 
 }
-
 // True position for drone 1
 void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
@@ -155,7 +164,6 @@ void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &m
   truths_1 = 1;
 
 }
-
 // True position for drone 2
 void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
@@ -174,6 +182,36 @@ void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &m
 
   true_position2 << x,y,z,roll,pitch,yaw;
   truths_2 = 1;
+
+}
+// Command velocity for turtlebot 0
+void DekfSensorFusion::vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
+
+  double linear = msg->linear.x;
+  double angular = msg->angular.z;
+
+  zupt_command_0 << linear,angular;
+
+}
+// Command velocity for turtlebot 1
+void DekfSensorFusion::vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
+
+  double linear = msg->linear.x;
+  double angular = msg->angular.z;
+
+  zupt_command_1 << linear,angular;
+
+}
+// Command velocity for turtlebot 2
+void DekfSensorFusion::vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
+
+  double linear = msg->linear.x;
+  double angular = msg->angular.z;
+
+  zupt_command_2 << linear,angular;
 
 }
 
@@ -201,39 +239,6 @@ if (truths_0==1 && truths_1==1 && truths_2==1) {
     initializer = 1;
   }
 }
-}
-
-// Command velocity for turtlebot 0
-void DekfSensorFusion::vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr &msg)
-{
-
-  double linear = msg->linear.x;
-  double angular = msg->angular.z;
-
-  zupt_command_0 << linear,angular;
-
-}
-
-// Command velocity for turtlebot 1
-void DekfSensorFusion::vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr &msg)
-{
-
-  double linear = msg->linear.x;
-  double angular = msg->angular.z;
-
-  zupt_command_1 << linear,angular;
-
-}
-
-// Command velocity for turtlebot 2
-void DekfSensorFusion::vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr &msg)
-{
-
-  double linear = msg->linear.x;
-  double angular = msg->angular.z;
-
-  zupt_command_2 << linear,angular;
-
 }
 
 // IMU Prediction
@@ -833,19 +838,22 @@ void DekfSensorFusion::SendCovariance()
   if(!dekf_sensor_fusion_client.call(srv_cov_share))
   {
       // stop_propation = 0;
-ROS_ERROR("Failed to call service - Range: %.4f",_range);
+      ROS_ERROR("Failed to call service - Range: %.4f",_range);
 
-if (robot_name=="tb3_0") {
-  error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
-  ROS_INFO("Error: %.4f",error);
-
-}
-else if (robot_name=="tb3_1") {
-  error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-  ROS_INFO("Error: %.4f",error);
-
-}
+      if (robot_name=="tb3_0") {
+        error = sqrt(pow((true_position0(0)-_x(6)),2)+pow((true_position0(1)-_x(7)),2)+pow((true_position0(2)-_x(8)),2));
+        ROS_INFO("Error: %.6f",error);
+      }
+      else if (robot_name=="tb3_1") {
+        error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
+        ROS_INFO("Error: %.6f",error);
+      }
+      else if (robot_name=="tb3_2") {
+        error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
+        ROS_INFO("Error: %.6f",error);
+      }
   }
+
 }
 
 bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , dekf_sensor_fusion::SrvCov::Response &res)
@@ -1090,13 +1098,13 @@ void DekfSensorFusion::publishRange_()
   pubRange_.publish(range_to_drone);
 // }
 }
-void DekfSensorFusion::publishResidual_()
-{
-
-  std_msgs::Float64 residual_robot;
-  residual_robot.data = res_range;
-  pubResidual_.publish(residual_robot);
-}
+// void DekfSensorFusion::publishResidual_()
+// {
+//
+//   std_msgs::Float64 residual_robot;
+//   residual_robot.data = res_range;
+//   pubResidual_.publish(residual_robot);
+// }
 // MAIN:
 int main(int argc, char **argv)
 {
@@ -1126,7 +1134,7 @@ int main(int argc, char **argv)
         }
         else{
           ROS_ERROR_STREAM(" Out of Range - Range: " << dekf_sensor_fusion._range); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-          ROS_INFO("Error: %.4f",dekf_sensor_fusion.error_im);
+          ROS_INFO("Error: %.6f",dekf_sensor_fusion.error_im);
         }
       }
     // ros::spinOnce();

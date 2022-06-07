@@ -95,7 +95,7 @@ private:
 
   ros::Publisher pubOdom_;
   ros::Publisher pubRange_;
-  ros::Publisher pubResidual_;
+  // ros::Publisher pubResidual_;
 
   geometry_msgs::Pose pose_;
   geometry_msgs::Twist bias_;
@@ -208,7 +208,7 @@ private:
   void bearingCallback();   // TODO: Fill this with GPS message type based on what sensor used
   void publishOdom_();
   // void publishRange_();
-  void publishResidual_();
+  // void publishResidual_();
   void zeroUpdate();
   void nonHolonomicUpdate();
   void calculateProcessNoiseINS();
