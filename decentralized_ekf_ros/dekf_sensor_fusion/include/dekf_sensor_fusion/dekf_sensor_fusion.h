@@ -25,6 +25,7 @@ public:
   void SendCovariance();
   void relativeUpdate();
   void initialization();
+  void publishRange_();
   // std::string node_name;
   std::string robot_name;
   Eigen::Matrix <double, 15, 1>  state_received;
@@ -33,6 +34,8 @@ public:
   Eigen::Matrix <double, 15, 1>  err_state_sent;
   Eigen::Matrix <double, 6, 1>  true_position1;
   Eigen::Matrix <double, 6, 1>  true_position2;
+  Eigen::Matrix <double, 2, 1>  zupt_command_1;
+  Eigen::Matrix <double, 2, 1>  zupt_command_2;
   Eigen::Matrix <double, 15, 1>  range_est;
   // Eigen::Matrix <double, 15, 15>  range_cov;
   Eigen::Matrix <double, 15, 1> state1;
@@ -58,10 +61,12 @@ public:
   bool initializer;
   bool truths_1;
   bool truths_2;
+  bool stop_propation;
   bool relative_update_done;
   bool gps_update_done;
   double _range;
   double res_range;
+  double error_im;
   Matrix3d eye3=Eigen::Matrix3d::Identity();
   Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);
   // ros::ServiceClient dekf_sensor_fusion_client;
@@ -80,6 +85,8 @@ private:
   ros::Subscriber sub_Bearing; //Subscribe to Bearing data
   ros::Subscriber true_drone1; //Subscribes to truth position from drone1
   ros::Subscriber true_drone2; //Subscribes to truth position from drone2
+  ros::Subscriber vel_command_tb1;  //Subscribes to velocity command from turtlebot 1
+  ros::Subscriber vel_command_tb2;  //Subscribes to velocity command from turtlebot 2
 
   ros::Publisher pubOdom_;
   ros::Publisher pubRange_;
@@ -187,10 +194,13 @@ private:
   // void rangeCallback(const sensor_msgs::Range::ConstPtr &msg);
   void true_drone1Callback(const nav_msgs::Odometry::ConstPtr& msg);
   void true_drone2Callback(const nav_msgs::Odometry::ConstPtr& msg);
+  void vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr& msg);
+  void vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr& msg);
+
   void altimeterCallback(); // TODO: Fill this with altimeter message type based on what sensor used.
   void bearingCallback();   // TODO: Fill this with GPS message type based on what sensor used
   void publishOdom_();
-  void publishRange_();
+  // void publishRange_();
   void publishResidual_();
   void zeroUpdate();
   void nonHolonomicUpdate();
