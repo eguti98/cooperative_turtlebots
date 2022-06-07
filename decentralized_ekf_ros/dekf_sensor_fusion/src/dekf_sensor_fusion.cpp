@@ -1142,11 +1142,23 @@ int main(int argc, char **argv)
     if (dekf_sensor_fusion.initializer == 1){
       dekf_sensor_fusion.publishRange_();
       // ROS_INFO("Range: %.4f",dekf_sensor_fusion._range);
-      if (dekf_sensor_fusion._range(0) < 5.0) {
+      if (dekf_sensor_fusion._range(0) < 5.0 || dekf_sensor_fusion._range(1) < 5.0) {
           dekf_sensor_fusion.SendCovariance();
         }
         else{
-          ROS_ERROR_STREAM(" Out of Range - Range: " << dekf_sensor_fusion._range); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_ERROR_STREAM("Out of Range"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          if (dekf_sensor_fusion.robot_name=="tb3_0") {
+              ROS_WARN("Range 1: %.4f",dekf_sensor_fusion._range(0));
+              ROS_WARN("Range 2: %.4f",dekf_sensor_fusion._range(1));
+          }
+          else if (dekf_sensor_fusion.robot_name=="tb3_1") {
+            ROS_WARN("Range 0: %.4f",dekf_sensor_fusion._range(0));
+            ROS_WARN("Range 2: %.4f",dekf_sensor_fusion._range(1));
+          }
+          else if (dekf_sensor_fusion.robot_name=="tb3_2") {
+            ROS_WARN("Range 0: %.4f",dekf_sensor_fusion._range(0));
+            ROS_WARN("Range 1: %.4f",dekf_sensor_fusion._range(1));
+          }
           ROS_INFO("Error: %.6f",dekf_sensor_fusion.error_im);
         }
       }
