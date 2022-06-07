@@ -78,7 +78,8 @@ public:
   // ros::ServiceClient dekf_sensor_fusion_client;
 private:
   ros::NodeHandle &nh_;
-  ros::ServiceClient dekf_sensor_fusion_client;
+  ros::ServiceClient dekf_sensor_fusion_client_1;
+  ros::ServiceClient dekf_sensor_fusion_client_2;
   ros::ServiceServer dekf_sensor_fusion_service;
   bool calculation(dekf_sensor_fusion::SrvCov::Request &req, dekf_sensor_fusion::SrvCov::Response &res);
 //   // ros::Publisher pubOdom_, ...

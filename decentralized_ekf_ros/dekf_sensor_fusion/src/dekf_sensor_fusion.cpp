@@ -13,21 +13,21 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   dekf_sensor_fusion_service =
   nh.advertiseService("covariance_srv", &DekfSensorFusion::calculation, this);
   if (robot_name=="tb3_0") {
-    dekf_sensor_fusion_client =
+    dekf_sensor_fusion_client_1 =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_1/covariance_srv");
-    dekf_sensor_fusion_client =
+    dekf_sensor_fusion_client_2 =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_2/covariance_srv");
   }
   else if (robot_name=="tb3_1") {
-    dekf_sensor_fusion_client =
+    dekf_sensor_fusion_client_1 =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_0/covariance_srv");
-    dekf_sensor_fusion_client =
+    dekf_sensor_fusion_client_2 =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_2/covariance_srv");
   }
   else if (robot_name=="tb3_2") {
-    dekf_sensor_fusion_client =
+    dekf_sensor_fusion_client_1 =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_0/covariance_srv");
-    dekf_sensor_fusion_client =
+    dekf_sensor_fusion_client_2 =
     nh.serviceClient<dekf_sensor_fusion::SrvCov>("/tb3_1/covariance_srv");
   }
 
@@ -816,19 +816,21 @@ void DekfSensorFusion::SendCovariance()
   // std::cout << "err_states in send cov" <<'\n'<< err_state_sent <<'\n';
 
 
-  MatrixXd sender(15,30);
-  std::vector<double> senderV(450);
+  MatrixXd sender(15,45);
+  std::vector<double> senderV(675);
 
   if (robot_name=="tb3_0") {
-    sender = _globalP.block<15,30>(0,0);
+    sender = _globalP.block<15,45>(0,0);
   }
   else if (robot_name=="tb3_1") {
-    sender = _globalP.block<15,30>(15,0);
+    sender = _globalP.block<15,45>(15,0);
   }
-
+  else if (robot_name=="tb3_2") {
+    sender = _globalP.block<15,45>(30,0);
+  }
   int count=0;
     for (int i = 0; i < 15; i++) {
-      for (int j = 0; j < 30; j++) {
+      for (int j = 0; j < 45; j++) {
         senderV[count]  = sender(i,j);
         count++;
       }
@@ -836,22 +838,39 @@ void DekfSensorFusion::SendCovariance()
 
   srv_cov_share.request.poscov.globalCov = senderV;
 
-  if(!dekf_sensor_fusion_client.call(srv_cov_share))
+  if(!dekf_sensor_fusion_client_1.call(srv_cov_share))
   {
-      // stop_propation = 0;
-      ROS_ERROR("Failed to call service - Range: %.4f & %.4f",_range(0),_range(1));
 
-      if (robot_name=="tb3_0") {
-        error = sqrt(pow((true_position0(0)-_x(6)),2)+pow((true_position0(1)-_x(7)),2)+pow((true_position0(2)-_x(8)),2));
-        ROS_INFO("Error: %.6f",error);
+      if (robot_name=="tb3_0" && _range(0) < 5) {
+        ROS_ERROR("Failed to call service tb1" );
+        ROS_WARN("Range tb1: %.4f",_range(0));
       }
-      else if (robot_name=="tb3_1") {
-        error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
-        ROS_INFO("Error: %.6f",error);
+      else if (robot_name=="tb3_1" && _range(0) < 5) {
+        ROS_ERROR("Failed to call service tb0");
+        ROS_WARN("Range tb0: %.4f",_range(0));
       }
-      else if (robot_name=="tb3_2") {
-        error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-        ROS_INFO("Error: %.6f",error);
+      else if (robot_name=="tb3_2" && _range(0) < 5) {
+        ROS_ERROR("Failed to call service tb0");
+        ROS_WARN("Range tb0: %.4f",_range(0));
+      }
+  }
+
+  if(!dekf_sensor_fusion_client_2.call(srv_cov_share))
+  {
+
+      if (robot_name=="tb3_0" && _range(1) < 5) {
+        ROS_ERROR("Failed to call service tb2");
+        ROS_WARN("Range tb2: %.4f",_range(1));
+      }
+      else if (robot_name=="tb3_1" && _range(1) < 5) {
+        ROS_ERROR("Failed to call service tb2");
+        ROS_WARN("Range tb2: %.4f",_range(1));
+      }
+      else if (robot_name=="tb3_2" && _range(1) < 5) {
+        ROS_ERROR("Failed to call service tb1");
+        // error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
+        ROS_WARN("Range tb1: %.4f",_range(1));
+        // ROS_INFO("Error: %.6f",error);
       }
   }
 
@@ -875,21 +894,38 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
 
   // std::cout << "err_states in calculation" <<'\n'<< err_state_received<<'\n';
 
-  MatrixXd receivedCov(15,30);
+  MatrixXd receivedCov(15,45);
   int count=0;
   for (int i = 0; i < 15; i++) {
-    for (int j = 0; j < 30; j++) {
+    for (int j = 0; j < 45; j++) {
       receivedCov(i,j) = req.poscov.globalCov[count];
       count++;
     }
   }
 
   if (robot_name=="tb3_0") {
-  _globalP.block<15,30>(15,0) << receivedCov;
+    if (_range(0)<5) {
+      _globalP.block<15,45>(15,0) << receivedCov;
+    }
+    else if(_range(1)<5) {
+      _globalP.block<15,45>(30,0) << receivedCov;
+    }
   }
   else if (robot_name=="tb3_1") {
-  _globalP.block<15,30>(0,0) << receivedCov;
-
+    if (_range(0)<5) {
+      _globalP.block<15,45>(0,0) << receivedCov;
+    }
+    else if(_range(1)<5) {
+      _globalP.block<15,45>(30,0) << receivedCov;
+    }
+  }
+  else if (robot_name=="tb3_2") {
+    if (_range(0)<5) {
+      _globalP.block<15,45>(0,0) << receivedCov;
+    }
+    else if(_range(1)<5) {
+      _globalP.block<15,45>(15,0) << receivedCov;
+    }
   }
   // std::cout << "State Shared" << '\n';
   if (initializer == 1) {
@@ -1142,25 +1178,51 @@ int main(int argc, char **argv)
     if (dekf_sensor_fusion.initializer == 1){
       dekf_sensor_fusion.publishRange_();
       // ROS_INFO("Range: %.4f",dekf_sensor_fusion._range);
-      if (dekf_sensor_fusion._range(0) < 5.0 || dekf_sensor_fusion._range(1) < 5.0) {
+
+      if (dekf_sensor_fusion._range(0) < 5.0) {
           dekf_sensor_fusion.SendCovariance();
         }
+      else{
+
+        if (dekf_sensor_fusion.robot_name=="tb3_0") {
+          ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(0));
+        }
+        else if (dekf_sensor_fusion.robot_name=="tb3_1") {
+          ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+        }
+        else if (dekf_sensor_fusion.robot_name=="tb3_2") {
+          ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+
+      }
+
+      }
+
+        if (dekf_sensor_fusion._range(1) < 5.0) {
+            dekf_sensor_fusion.SendCovariance();
+        }
         else{
-          ROS_ERROR_STREAM("Out of Range"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+
           if (dekf_sensor_fusion.robot_name=="tb3_0") {
-              ROS_WARN("Range 1: %.4f",dekf_sensor_fusion._range(0));
-              ROS_WARN("Range 2: %.4f",dekf_sensor_fusion._range(1));
+            ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+            ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
           }
           else if (dekf_sensor_fusion.robot_name=="tb3_1") {
-            ROS_WARN("Range 0: %.4f",dekf_sensor_fusion._range(0));
-            ROS_WARN("Range 2: %.4f",dekf_sensor_fusion._range(1));
+            ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+            ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
           }
           else if (dekf_sensor_fusion.robot_name=="tb3_2") {
-            ROS_WARN("Range 0: %.4f",dekf_sensor_fusion._range(0));
-            ROS_WARN("Range 1: %.4f",dekf_sensor_fusion._range(1));
+            ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+            ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(1));
           }
+        }
+
+        if (dekf_sensor_fusion._range(0) > 5.0 && dekf_sensor_fusion._range(1) > 5.0) {
           ROS_INFO("Error: %.6f",dekf_sensor_fusion.error_im);
         }
+
       }
     // ros::spinOnce();
     rate.sleep(); //TODO make sure if it affects the AsyncSpinner or not
