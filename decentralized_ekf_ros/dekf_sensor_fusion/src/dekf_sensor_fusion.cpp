@@ -39,6 +39,10 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   else if (robot_name=="tb3_1") {
     _pos << 0,0,0;
   }
+  else if (robot_name=="tb3_2") {
+    _pos << 0,0,0;
+  }
+
 
   _attitude = _dcm2euler(_Cnb.transpose());
 
