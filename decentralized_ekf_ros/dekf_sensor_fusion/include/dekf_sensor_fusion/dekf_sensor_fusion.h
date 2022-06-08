@@ -72,9 +72,7 @@ public:
   bool stop_propation;
   bool relative_update_done;
   bool gps_update_done;
-  // bool update_1;
-  // bool update_2;
-  // double _range;
+
   double res_range;
   double error_im;
   Matrix3d eye3=Eigen::Matrix3d::Identity();

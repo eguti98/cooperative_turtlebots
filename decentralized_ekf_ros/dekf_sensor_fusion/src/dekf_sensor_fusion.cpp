@@ -80,12 +80,10 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   truths_0 = 0;
   truths_1 = 0;
   truths_2 = 0;
-  // update_1 =0;
-  // update_2 =0;
+
   relative_update_done = 0;
   gps_update_done = 0;
-  // stop_propation = 0;
-  // _range= 100; //TODO if the range is not given it starts with '0'
+
 
 
   R_zero << std::pow(0.01,2),0,0,0,0,0,
@@ -124,126 +122,9 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   vel_command_tb1 = nh.subscribe("/tb3_1/cmd_vel", 1, &DekfSensorFusion::vel_command_tb1Callback, this);
   vel_command_tb2 = nh.subscribe("/tb3_2/cmd_vel", 1, &DekfSensorFusion::vel_command_tb2Callback, this);
 }
-// TRUE POSITION & VEL COMMAND FOR INIT
-
-// True position for drone 0
-void DekfSensorFusion::true_drone0Callback(const nav_msgs::Odometry::ConstPtr &msg)
-{
-
-  double x = msg->pose.pose.position.x;
-  double y = msg->pose.pose.position.y;
-  double z = msg->pose.pose.position.z;
-  double orientx = msg->pose.pose.orientation.x;
-  double orienty = msg->pose.pose.orientation.y;
-  double orientz = msg->pose.pose.orientation.z;
-  double orientw = msg->pose.pose.orientation.w;
-  tf::Quaternion q(orientx,orienty,orientz,orientw);
-  tf::Matrix3x3 m(q);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
-
-  true_position0 << x,y,z,roll,pitch,yaw;
-  truths_0 = 1;
-
-}
-// True position for drone 1
-void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &msg)
-{
-
-  double x = msg->pose.pose.position.x;
-  double y = msg->pose.pose.position.y;
-  double z = msg->pose.pose.position.z;
-  double orientx = msg->pose.pose.orientation.x;
-  double orienty = msg->pose.pose.orientation.y;
-  double orientz = msg->pose.pose.orientation.z;
-  double orientw = msg->pose.pose.orientation.w;
-  tf::Quaternion q(orientx,orienty,orientz,orientw);
-  tf::Matrix3x3 m(q);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
-
-  true_position1 << x,y,z,roll,pitch,yaw;
-  truths_1 = 1;
-
-}
-// True position for drone 2
-void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &msg)
-{
-
-  double x = msg->pose.pose.position.x;
-  double y = msg->pose.pose.position.y;
-  double z = msg->pose.pose.position.z;
-  double orientx = msg->pose.pose.orientation.x;
-  double orienty = msg->pose.pose.orientation.y;
-  double orientz = msg->pose.pose.orientation.z;
-  double orientw = msg->pose.pose.orientation.w;
-  tf::Quaternion q(orientx,orienty,orientz,orientw);
-  tf::Matrix3x3 m(q);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
-
-  true_position2 << x,y,z,roll,pitch,yaw;
-  truths_2 = 1;
-
-}
-// Command velocity for turtlebot 0
-void DekfSensorFusion::vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr &msg)
-{
-
-  double linear = msg->linear.x;
-  double angular = msg->angular.z;
-
-  zupt_command_0 << linear,angular;
-
-}
-// Command velocity for turtlebot 1
-void DekfSensorFusion::vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr &msg)
-{
-
-  double linear = msg->linear.x;
-  double angular = msg->angular.z;
-
-  zupt_command_1 << linear,angular;
-
-}
-// Command velocity for turtlebot 2
-void DekfSensorFusion::vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr &msg)
-{
-
-  double linear = msg->linear.x;
-  double angular = msg->angular.z;
-
-  zupt_command_2 << linear,angular;
-
-}
-
-// Initilization for position
-void DekfSensorFusion::initialization()
-{
-
-if (truths_0==1 && truths_1==1 && truths_2==1) {
-  if (robot_name == "tb3_0") {
-    _pos << true_position0(0),true_position0(1),true_position0(2);
-    _attitude << true_position0(3),true_position0(4),true_position0(5);
-    _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
-    initializer = 1;
-  }
-  else if (robot_name == "tb3_1") {
-    _pos << true_position1(0),true_position1(1),true_position1(2);
-    _attitude << true_position1(3),true_position1(4),true_position1(5);
-    _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
-    initializer = 1;
-  }
-  else if (robot_name == "tb3_2") {
-    _pos << true_position2(0),true_position2(1),true_position2(2);
-    _attitude << true_position2(3),true_position2(4),true_position2(5);
-    _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
-    initializer = 1;
-  }
-}
-}
-
+//
 // IMU Prediction
+//
 void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
 
@@ -396,105 +277,9 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
   }
   // else {return;}
 }
-
-void DekfSensorFusion::zeroUpdate(){ //check again for velocity old vs velocity -as all states
-Vector3d z_zaru;
-Vector3d z_zupt;
-Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
-// std::cout << "ZUPT" << '\n' << _P <<'\n';
-
-        z_zaru = -_imu_gyro.transpose();
-        z_zupt = -V_old;
-        Eigen::Matrix<double, 6, 1> z_zero;
-        z_zero.segment(0,3) <<z_zaru;
-        z_zero.segment(3,3) <<z_zupt;
-        K_zero = _P * H_zero.transpose() * (H_zero * _P * H_zero.transpose() + R_zero).inverse();
-        _error_states = _error_states + K_zero * (z_zero  - (H_zero * _error_states));
-        _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cnb.transpose());
-        V_old = V_old-_error_states.segment(3,3);
-        Pos_old = Pos_old -_error_states.segment(6,3);
-        _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
-
-        _P=(Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
-//END - ZERO UPDATES
-// std::cout << "vel inside zupt" << '\n' << V_old <<'\n';
-
-return;
-}
-
-void DekfSensorFusion::nonHolonomicUpdate(){
-Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
-Vector3d lf2b(0.0, 0.0, 0.272);
-z_holo.row(0) = -eye3.row(1)*(Cnb*V_old-_skewsym(_imu_gyro)*lf2b); //z31
-z_holo.row(1) = -eye3.row(2)*(Cnb*V_old-_skewsym(_imu_gyro)*lf2b); //z41
-H_holo.row(0) << zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h32
-H_holo.row(1) << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h42
-        if (abs(_imu_gyro[2]>0.1)) {
-          R_holoS << 0.05;
-          z_holoS << -eye3.row(2)*(Cnb*V_old-_skewsym(_imu_gyro)*lf2b);
-          H_holoS << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
-          double tempVar1= H_holoS * _P * H_holoS.transpose();
-          double tempVar2= 1/(tempVar1+0.05);
-          Vector15 tempvar3= _P * H_holoS.transpose();
-          Vector15 tempVar4= tempvar3*tempVar2;
-           K_holoS=tempVar4;
-           _error_states = _error_states + K_holoS* (z_holoS  - (H_holoS * _error_states));
-           _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cnb.transpose());
-           V_old = V_old-_error_states.segment(3,3);
-           Pos_old = Pos_old -_error_states.segment(6,3);
-           _P=(Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS).transpose() + K_holoS * R_holoS * K_holoS.transpose();
-        }
-        else {
-          K_holo = _P * H_holo.transpose() * (H_holo * _P * H_holo.transpose() + R_holo).inverse();
-          _error_states = _error_states + K_holoS* (z_holoS  - (H_holoS * _error_states));
-          _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cnb.transpose());
-          V_old = V_old-_error_states.segment(3,3);
-          Pos_old = Pos_old -_error_states.segment(6,3);
-          _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
-          _P=(Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS).transpose() + K_holoS * R_holoS * K_holoS.transpose();
-  }
-
-
-return;
-}
-
-void DekfSensorFusion::calculateProcessNoiseINS(){
-  // double sig_gyro_inRun = 1.6*3.14/180/3600; //rad/s -- standard deviation of the gyro dynamic biases
-  // double sig_ARW = 10*(3.14/180)*sqrt(3600)/3600;; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
-  //
-  // double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
-  // double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
-  double sig_gyro_inRun = 0; //0.0000008; //rad/s -- standard deviation of the gyro dynamic biases
-  double sig_ARW = 2.0e-4; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
-
-  double sig_accel_inRun = 0;//0.001; // m/s -- standard deviation of the accelerometer dynamic biases
-  double sig_VRW = 1.7e-2; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
-
-  //following 14.2.6 of Groves
-  double Srg= pow(sig_ARW,2)*_dt; // PSD of the gyro noise
-  double Sra= pow(sig_VRW,2)*_dt; // PSD of the acce noise
-  double Sbad=pow(sig_accel_inRun,2); // accelerometer bias variation PSD
-  double Sbgd=pow(sig_gyro_inRun,2); // gyro bias variation PSD
-
-  //Simplified -> eq 14.82 pg 592
-
-      Eigen::Matrix <double, 15, 15> Q(15,15);
-      // Q<<Srg*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      // Eigen::Matrix3d::Zero(3,3),Sra*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
-      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*_dt*Eigen::Matrix3d::Identity(3,3);
-
-      Q<<Srg*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      Eigen::Matrix3d::Zero(3,3),Sra*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
-      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*Eigen::Matrix3d::Identity(3,3);
-
-      _Q_ins=Q;
-
-}
+//
 // GPS Update
+//
 void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
 
@@ -553,18 +338,17 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     // publishResidual_();
   }
 }
-
+//
 // VO Update
+//
 void DekfSensorFusion::voCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {}
-
-
-
-
+//
 // Relative Update
+//
 void DekfSensorFusion::relativeUpdate()
 {
-  ROS_INFO_STREAM(robot_name<< " & " <<robot_id_received);
+  ROS_INFO_STREAM(robot_name << " & " << robot_id_received);
       // ROS_WARN("Relative Update Done");
 //     MatrixXd covariances(30,30);
 //     P_d1 = _globalP.block<15,15>(0,0);  //Sigma_ii
@@ -766,201 +550,9 @@ void DekfSensorFusion::relativeUpdate()
 //
 //     // stop_propation = 0;
 }
-
-
-
-void DekfSensorFusion::SendCovariance()
-{
-
-  dekf_sensor_fusion::SrvCov srv_cov_share;
-
-  pose_.orientation.x = _x[0];
-  pose_.orientation.y = _x[1];
-  pose_.orientation.z = _x[2];
-  twist_.x =            _x[3];
-  twist_.y =            _x[4];
-  twist_.z =            _x[5];
-  pose_.position.x =    _x[6];
-  pose_.position.y =    _x[7];
-  pose_.position.z =    _x[8];
-  bias_.linear.x =      _x[9];
-  bias_.linear.y =      _x[10];
-  bias_.linear.z =      _x[11];
-  bias_.angular.x =     _x[12];
-  bias_.angular.y =     _x[13];
-  bias_.angular.z =     _x[14];
-  err_pose_.orientation.x = _error_states[0];
-  err_pose_.orientation.y = _error_states[1];
-  err_pose_.orientation.z = _error_states[2];
-  err_twist_.x =            _error_states[3];
-  err_twist_.y =            _error_states[4];
-  err_twist_.z =            _error_states[5];
-  err_pose_.position.x =    _error_states[6];
-  err_pose_.position.y =    _error_states[7];
-  err_pose_.position.z =    _error_states[8];
-  err_bias_.linear.x =      _error_states[9];
-  err_bias_.linear.y =      _error_states[10];
-  err_bias_.linear.z =      _error_states[11];
-  err_bias_.angular.x =     _error_states[12];
-  err_bias_.angular.y =     _error_states[13];
-  err_bias_.angular.z =     _error_states[14];
-
-  srv_cov_share.request.poscov.pose = pose_;
-  srv_cov_share.request.poscov.twist = twist_;
-  srv_cov_share.request.poscov.bias = bias_;
-  srv_cov_share.request.poscov.err_pose = err_pose_;
-  srv_cov_share.request.poscov.err_twist = err_twist_;
-  srv_cov_share.request.poscov.err_bias = err_bias_;
-
-  srv_cov_share.request.poscov.robot_id.data = robot_name;
-
-  state_sent << pose_.orientation.x,pose_.orientation.y,pose_.orientation.z,twist_.x,twist_.y,twist_.z,pose_.position.x,pose_.position.y,pose_.position.z,bias_.linear.x,bias_.linear.y,bias_.linear.z,bias_.angular.x,bias_.angular.y,bias_.angular.z;
-  err_state_sent << err_pose_.orientation.x,err_pose_.orientation.y,err_pose_.orientation.z,err_twist_.x,err_twist_.y,err_twist_.z,err_pose_.position.x,err_pose_.position.y,err_pose_.position.z,err_bias_.linear.x,err_bias_.linear.y,err_bias_.linear.z,err_bias_.angular.x,err_bias_.angular.y,err_bias_.angular.z;
-
-  // stop_propation = 1;
-  // std::cout << "err_states in send cov" <<'\n'<< err_state_sent <<'\n';
-
-
-  MatrixXd sender(15,45);
-  std::vector<double> senderV(675);
-
-  if (robot_name=="tb3_0") {
-    sender = _globalP.block<15,45>(0,0);
-  }
-  else if (robot_name=="tb3_1") {
-    sender = _globalP.block<15,45>(15,0);
-  }
-  else if (robot_name=="tb3_2") {
-    sender = _globalP.block<15,45>(30,0);
-  }
-  int count=0;
-    for (int i = 0; i < 15; i++) {
-      for (int j = 0; j < 45; j++) {
-        senderV[count]  = sender(i,j);
-        count++;
-      }
-    }
-
-  srv_cov_share.request.poscov.globalCov = senderV;
-
-  // update_1 = 1;
-  // update_2 = 1;
-
-  if(!dekf_sensor_fusion_client_1.call(srv_cov_share) && _range(0) < 5)
-  {
-
-      if (robot_name=="tb3_0") {
-        ROS_ERROR("Failed to call Service tb1");
-        ROS_INFO("Range tb1: %.4f",_range(0));
-      }
-      else if (robot_name=="tb3_1") {
-        ROS_ERROR("Failed to call Service tb0");
-        ROS_INFO("Range tb0: %.4f",_range(0));
-      }
-      else if (robot_name=="tb3_2") {
-        ROS_ERROR("Failed to call Service tb0");
-        ROS_INFO("Range tb0: %.4f",_range(0));
-      }
-      // update_1 = 0;
-  }
-
-  // else if(!dekf_sensor_fusion_client_1.call(srv_cov_share) && _range(0) > 5)
-  // {
-  //
-  //     if (robot_name=="tb3_0") {
-  //       ROS_ERROR("Out of range tb1");
-  //       ROS_WARN("Range tb1: %.4f",_range(0));
-  //     }
-  //     else if (robot_name=="tb3_1") {
-  //       ROS_ERROR("Out of range tb0");
-  //       ROS_WARN("Range tb0: %.4f",_range(0));
-  //     }
-  //     else if (robot_name=="tb3_2") {
-  //       ROS_ERROR("Out of range tb0");
-  //       ROS_WARN("Range tb0: %.4f",_range(0));
-  //     }
-  //     // update_1 = 0;
-  // }
-
-  if(!dekf_sensor_fusion_client_2.call(srv_cov_share) && _range(1) < 5)
-  {
-
-      if (robot_name=="tb3_0") {
-        ROS_ERROR("Failed to call Service tb2");
-        ROS_INFO("Range tb2: %.4f",_range(1));
-      }
-      else if (robot_name=="tb3_1") {
-        ROS_ERROR("Failed to call Service tb2");
-        ROS_INFO("Range tb2: %.4f",_range(1));
-      }
-      else if (robot_name=="tb3_2") {
-        ROS_ERROR("Failed to call Service tb1");
-        // error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-        ROS_INFO("Range tb1: %.4f",_range(1));
-        // ROS_INFO("Error: %.6f",error);
-      }
-      // update_2 = 0;
-  }
-
-  // else if(!dekf_sensor_fusion_client_2.call(srv_cov_share) && _range(1) > 5)
-  // {
-  //
-  //     if (robot_name=="tb3_0") {
-  //       ROS_ERROR("Out of range tb2");
-  //       ROS_WARN("Range tb2: %.4f",_range(1));
-  //     }
-  //     else if (robot_name=="tb3_1") {
-  //       ROS_ERROR("Out of range tb2");
-  //       ROS_WARN("Range tb2: %.4f",_range(1));
-  //     }
-  //     else if (robot_name=="tb3_2") {
-  //       ROS_ERROR("Out of range tb1");
-  //       // error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-  //       ROS_WARN("Range tb1: %.4f",_range(1));
-  //       // ROS_INFO("Error: %.6f",error);
-  //     }
-  //     update_2 = 0;
-  // }
-
-  if (robot_name=="tb3_0") {
-    if (_range(0)>5) {
-      ROS_ERROR("Out of Range tb1");
-      ROS_INFO("Range tb1: %.4f",_range(0));
-    }
-    else if (_range(1)>5) {
-      ROS_ERROR("Out of Range tb2");
-      ROS_INFO("Range tb2: %.4f",_range(1));
-    }
-  }
-  else if (robot_name=="tb3_1") {
-    if (_range(0)>5) {
-      ROS_ERROR("Out of Range tb0");
-      ROS_INFO("Range tb0: %.4f",_range(0));
-    }
-    else if (_range(1)>5) {
-      ROS_ERROR("Out of Range tb2");
-      ROS_INFO("Range tb2: %.4f",_range(1));
-    }
-  }
-  else if (robot_name=="tb3_2") {
-    if (_range(0)>5) {
-      ROS_ERROR("Out of Range tb0");
-      ROS_INFO("Range tb0: %.4f",_range(0));
-    }
-    else if (_range(1)>5) {
-      ROS_ERROR("Out of Range tb1");
-      ROS_INFO("Range tb1: %.4f",_range(1));
-    }
-    // // error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-    // ROS_WARN("Range tb1: %.4f",_range(1));
-    // ROS_INFO("Error: %.6f",error);
-  }
-
-
-
-
-}
-
+//
+// SERVER
+//
 bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , dekf_sensor_fusion::SrvCov::Response &res)
 {
 
@@ -1031,14 +623,265 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
         relativeUpdate();
       }
     }
-  // std::cout << "State Shared" << '\n';
-  // if (initializer == 1) {
-  //   relativeUpdate();
-// }
+
   }
   return true;
 }
-// TOOLS
+//
+// CLIENT
+//
+void DekfSensorFusion::SendCovariance()
+{
+
+  dekf_sensor_fusion::SrvCov srv_cov_share;
+
+  pose_.orientation.x = _x[0];
+  pose_.orientation.y = _x[1];
+  pose_.orientation.z = _x[2];
+  twist_.x =            _x[3];
+  twist_.y =            _x[4];
+  twist_.z =            _x[5];
+  pose_.position.x =    _x[6];
+  pose_.position.y =    _x[7];
+  pose_.position.z =    _x[8];
+  bias_.linear.x =      _x[9];
+  bias_.linear.y =      _x[10];
+  bias_.linear.z =      _x[11];
+  bias_.angular.x =     _x[12];
+  bias_.angular.y =     _x[13];
+  bias_.angular.z =     _x[14];
+  err_pose_.orientation.x = _error_states[0];
+  err_pose_.orientation.y = _error_states[1];
+  err_pose_.orientation.z = _error_states[2];
+  err_twist_.x =            _error_states[3];
+  err_twist_.y =            _error_states[4];
+  err_twist_.z =            _error_states[5];
+  err_pose_.position.x =    _error_states[6];
+  err_pose_.position.y =    _error_states[7];
+  err_pose_.position.z =    _error_states[8];
+  err_bias_.linear.x =      _error_states[9];
+  err_bias_.linear.y =      _error_states[10];
+  err_bias_.linear.z =      _error_states[11];
+  err_bias_.angular.x =     _error_states[12];
+  err_bias_.angular.y =     _error_states[13];
+  err_bias_.angular.z =     _error_states[14];
+
+  srv_cov_share.request.poscov.pose = pose_;
+  srv_cov_share.request.poscov.twist = twist_;
+  srv_cov_share.request.poscov.bias = bias_;
+  srv_cov_share.request.poscov.err_pose = err_pose_;
+  srv_cov_share.request.poscov.err_twist = err_twist_;
+  srv_cov_share.request.poscov.err_bias = err_bias_;
+
+  srv_cov_share.request.poscov.robot_id.data = robot_name;
+
+  state_sent << pose_.orientation.x,pose_.orientation.y,pose_.orientation.z,twist_.x,twist_.y,twist_.z,pose_.position.x,pose_.position.y,pose_.position.z,bias_.linear.x,bias_.linear.y,bias_.linear.z,bias_.angular.x,bias_.angular.y,bias_.angular.z;
+  err_state_sent << err_pose_.orientation.x,err_pose_.orientation.y,err_pose_.orientation.z,err_twist_.x,err_twist_.y,err_twist_.z,err_pose_.position.x,err_pose_.position.y,err_pose_.position.z,err_bias_.linear.x,err_bias_.linear.y,err_bias_.linear.z,err_bias_.angular.x,err_bias_.angular.y,err_bias_.angular.z;
+
+  MatrixXd sender(15,45);
+  std::vector<double> senderV(675);
+
+  if (robot_name=="tb3_0") {
+    sender = _globalP.block<15,45>(0,0);
+  }
+  else if (robot_name=="tb3_1") {
+    sender = _globalP.block<15,45>(15,0);
+  }
+  else if (robot_name=="tb3_2") {
+    sender = _globalP.block<15,45>(30,0);
+  }
+  int count=0;
+    for (int i = 0; i < 15; i++) {
+      for (int j = 0; j < 45; j++) {
+        senderV[count]  = sender(i,j);
+        count++;
+      }
+    }
+
+  srv_cov_share.request.poscov.globalCov = senderV;
+
+
+  if(!dekf_sensor_fusion_client_1.call(srv_cov_share) && _range(0) < 5)
+  {
+
+      if (robot_name=="tb3_0") {
+        ROS_ERROR("Failed to call Service tb1");
+        ROS_INFO("Range tb1: %.4f",_range(0));
+      }
+      else if (robot_name=="tb3_1") {
+        ROS_ERROR("Failed to call Service tb0");
+        ROS_INFO("Range tb0: %.4f",_range(0));
+      }
+      else if (robot_name=="tb3_2") {
+        ROS_ERROR("Failed to call Service tb0");
+        ROS_INFO("Range tb0: %.4f",_range(0));
+      }
+  }
+
+  if(!dekf_sensor_fusion_client_2.call(srv_cov_share) && _range(1) < 5)
+  {
+
+      if (robot_name=="tb3_0") {
+        ROS_ERROR("Failed to call Service tb2");
+        ROS_INFO("Range tb2: %.4f",_range(1));
+      }
+      else if (robot_name=="tb3_1") {
+        ROS_ERROR("Failed to call Service tb2");
+        ROS_INFO("Range tb2: %.4f",_range(1));
+      }
+      else if (robot_name=="tb3_2") {
+        ROS_ERROR("Failed to call Service tb1");
+        ROS_INFO("Range tb1: %.4f",_range(1));
+      }
+  }
+
+  if (robot_name=="tb3_0") {
+    if (_range(0)>5) {
+      ROS_ERROR("Out of Range tb1");
+      ROS_INFO("Range tb1: %.4f",_range(0));
+    }
+    else if (_range(1)>5) {
+      ROS_ERROR("Out of Range tb2");
+      ROS_INFO("Range tb2: %.4f",_range(1));
+    }
+  }
+  else if (robot_name=="tb3_1") {
+    if (_range(0)>5) {
+      ROS_ERROR("Out of Range tb0");
+      ROS_INFO("Range tb0: %.4f",_range(0));
+    }
+    else if (_range(1)>5) {
+      ROS_ERROR("Out of Range tb2");
+      ROS_INFO("Range tb2: %.4f",_range(1));
+    }
+  }
+  else if (robot_name=="tb3_2") {
+    if (_range(0)>5) {
+      ROS_ERROR("Out of Range tb0");
+      ROS_INFO("Range tb0: %.4f",_range(0));
+    }
+    else if (_range(1)>5) {
+      ROS_ERROR("Out of Range tb1");
+      ROS_INFO("Range tb1: %.4f",_range(1));
+    }
+  }
+
+}
+//
+// INITIALIZATION FORMULAS
+//
+void DekfSensorFusion::true_drone0Callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+
+  double x = msg->pose.pose.position.x;
+  double y = msg->pose.pose.position.y;
+  double z = msg->pose.pose.position.z;
+  double orientx = msg->pose.pose.orientation.x;
+  double orienty = msg->pose.pose.orientation.y;
+  double orientz = msg->pose.pose.orientation.z;
+  double orientw = msg->pose.pose.orientation.w;
+  tf::Quaternion q(orientx,orienty,orientz,orientw);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+
+  true_position0 << x,y,z,roll,pitch,yaw;
+  truths_0 = 1;
+
+}
+void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+
+  double x = msg->pose.pose.position.x;
+  double y = msg->pose.pose.position.y;
+  double z = msg->pose.pose.position.z;
+  double orientx = msg->pose.pose.orientation.x;
+  double orienty = msg->pose.pose.orientation.y;
+  double orientz = msg->pose.pose.orientation.z;
+  double orientw = msg->pose.pose.orientation.w;
+  tf::Quaternion q(orientx,orienty,orientz,orientw);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+
+  true_position1 << x,y,z,roll,pitch,yaw;
+  truths_1 = 1;
+
+}
+void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+
+  double x = msg->pose.pose.position.x;
+  double y = msg->pose.pose.position.y;
+  double z = msg->pose.pose.position.z;
+  double orientx = msg->pose.pose.orientation.x;
+  double orienty = msg->pose.pose.orientation.y;
+  double orientz = msg->pose.pose.orientation.z;
+  double orientw = msg->pose.pose.orientation.w;
+  tf::Quaternion q(orientx,orienty,orientz,orientw);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+
+  true_position2 << x,y,z,roll,pitch,yaw;
+  truths_2 = 1;
+
+}
+void DekfSensorFusion::vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
+
+  double linear = msg->linear.x;
+  double angular = msg->angular.z;
+
+  zupt_command_0 << linear,angular;
+
+}
+void DekfSensorFusion::vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
+
+  double linear = msg->linear.x;
+  double angular = msg->angular.z;
+
+  zupt_command_1 << linear,angular;
+
+}
+void DekfSensorFusion::vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
+
+  double linear = msg->linear.x;
+  double angular = msg->angular.z;
+
+  zupt_command_2 << linear,angular;
+
+}
+void DekfSensorFusion::initialization()
+{
+
+if (truths_0==1 && truths_1==1 && truths_2==1) {
+  if (robot_name == "tb3_0") {
+    _pos << true_position0(0),true_position0(1),true_position0(2);
+    _attitude << true_position0(3),true_position0(4),true_position0(5);
+    _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
+    initializer = 1;
+  }
+  else if (robot_name == "tb3_1") {
+    _pos << true_position1(0),true_position1(1),true_position1(2);
+    _attitude << true_position1(3),true_position1(4),true_position1(5);
+    _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
+    initializer = 1;
+  }
+  else if (robot_name == "tb3_2") {
+    _pos << true_position2(0),true_position2(1),true_position2(2);
+    _attitude << true_position2(3),true_position2(4),true_position2(5);
+    _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
+    initializer = 1;
+  }
+}
+
+}
+//
+// PROPAGATION STATE FORMULAS
+//
 Matrix3d DekfSensorFusion::_euler2dcmV(double phi, double theta, double psi)
 {
   // from Titterton and Weston & adapted from MS Braasch Matlab toolbox
@@ -1162,6 +1005,111 @@ Matrix3d DekfSensorFusion::_skewsym(Vector3d vec)
   return skewMat;
 
 }
+//
+// PSEUDOMEASUREMENT UPDATES FORMULAS
+//
+void DekfSensorFusion::zeroUpdate()
+{
+   //check again for velocity old vs velocity -as all states
+Vector3d z_zaru;
+Vector3d z_zupt;
+Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
+// std::cout << "ZUPT" << '\n' << _P <<'\n';
+
+        z_zaru = -_imu_gyro.transpose();
+        z_zupt = -V_old;
+        Eigen::Matrix<double, 6, 1> z_zero;
+        z_zero.segment(0,3) <<z_zaru;
+        z_zero.segment(3,3) <<z_zupt;
+        K_zero = _P * H_zero.transpose() * (H_zero * _P * H_zero.transpose() + R_zero).inverse();
+        _error_states = _error_states + K_zero * (z_zero  - (H_zero * _error_states));
+        _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cnb.transpose());
+        V_old = V_old-_error_states.segment(3,3);
+        Pos_old = Pos_old -_error_states.segment(6,3);
+        _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
+
+        _P=(Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+//END - ZERO UPDATES
+// std::cout << "vel inside zupt" << '\n' << V_old <<'\n';
+
+return;
+}
+void DekfSensorFusion::nonHolonomicUpdate()
+{
+Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
+Vector3d lf2b(0.0, 0.0, 0.272);
+z_holo.row(0) = -eye3.row(1)*(Cnb*V_old-_skewsym(_imu_gyro)*lf2b); //z31
+z_holo.row(1) = -eye3.row(2)*(Cnb*V_old-_skewsym(_imu_gyro)*lf2b); //z41
+H_holo.row(0) << zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h32
+H_holo.row(1) << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0); //h42
+        if (abs(_imu_gyro[2]>0.1)) {
+          R_holoS << 0.05;
+          z_holoS << -eye3.row(2)*(Cnb*V_old-_skewsym(_imu_gyro)*lf2b);
+          H_holoS << zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
+          double tempVar1= H_holoS * _P * H_holoS.transpose();
+          double tempVar2= 1/(tempVar1+0.05);
+          Vector15 tempvar3= _P * H_holoS.transpose();
+          Vector15 tempVar4= tempvar3*tempVar2;
+           K_holoS=tempVar4;
+           _error_states = _error_states + K_holoS* (z_holoS  - (H_holoS * _error_states));
+           _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cnb.transpose());
+           V_old = V_old-_error_states.segment(3,3);
+           Pos_old = Pos_old -_error_states.segment(6,3);
+           _P=(Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS).transpose() + K_holoS * R_holoS * K_holoS.transpose();
+        }
+        else {
+          K_holo = _P * H_holo.transpose() * (H_holo * _P * H_holo.transpose() + R_holo).inverse();
+          _error_states = _error_states + K_holoS* (z_holoS  - (H_holoS * _error_states));
+          _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cnb.transpose());
+          V_old = V_old-_error_states.segment(3,3);
+          Pos_old = Pos_old -_error_states.segment(6,3);
+          _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
+          _P=(Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS) * _P* ( Eigen::MatrixXd::Identity(15,15) - K_holoS * H_holoS).transpose() + K_holoS * R_holoS * K_holoS.transpose();
+  }
+
+
+return;
+}
+void DekfSensorFusion::calculateProcessNoiseINS()
+{
+  // double sig_gyro_inRun = 1.6*3.14/180/3600; //rad/s -- standard deviation of the gyro dynamic biases
+  // double sig_ARW = 10*(3.14/180)*sqrt(3600)/3600;; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
+  //
+  // double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
+  // double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
+  double sig_gyro_inRun = 0; //0.0000008; //rad/s -- standard deviation of the gyro dynamic biases
+  double sig_ARW = 2.0e-4; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
+
+  double sig_accel_inRun = 0;//0.001; // m/s -- standard deviation of the accelerometer dynamic biases
+  double sig_VRW = 1.7e-2; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
+
+  //following 14.2.6 of Groves
+  double Srg= pow(sig_ARW,2)*_dt; // PSD of the gyro noise
+  double Sra= pow(sig_VRW,2)*_dt; // PSD of the acce noise
+  double Sbad=pow(sig_accel_inRun,2); // accelerometer bias variation PSD
+  double Sbgd=pow(sig_gyro_inRun,2); // gyro bias variation PSD
+
+  //Simplified -> eq 14.82 pg 592
+
+      Eigen::Matrix <double, 15, 15> Q(15,15);
+      // Q<<Srg*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Sra*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*_dt*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
+      // Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*_dt*Eigen::Matrix3d::Identity(3,3);
+
+      Q<<Srg*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Sra*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbad*Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),
+      Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Sbgd*Eigen::Matrix3d::Identity(3,3);
+
+      _Q_ins=Q;
+
+}
+//
+// PUBLISHERS
+//
 void DekfSensorFusion::publishOdom_()
 {
   nav_msgs::Odometry updatedOdom;
@@ -1252,14 +1200,9 @@ void DekfSensorFusion::publishRange_()
   pubRange_.publish(range_to_drone);
 
 }
-// void DekfSensorFusion::publishResidual_()
-// {
 //
-//   std_msgs::Float64 residual_robot;
-//   residual_robot.data = res_range;
-//   pubResidual_.publish(residual_robot);
-// }
 // MAIN:
+//
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "dekf_sensor_fusion");
@@ -1271,107 +1214,49 @@ int main(int argc, char **argv)
   spinner.start();
   DekfSensorFusion dekf_sensor_fusion(nh);
   int counter = 0;
-  std::string robot_name;
+
   while (ros::ok())
   {
 
     ROS_INFO("----------------");
-
     if (dekf_sensor_fusion.initializer == 0 && dekf_sensor_fusion.truths_0 == 1 && dekf_sensor_fusion.truths_1 == 1 && dekf_sensor_fusion.truths_2 == 1) {
       dekf_sensor_fusion.initialization();
     }
-    if (dekf_sensor_fusion.initializer == 1){
+    if (dekf_sensor_fusion.initializer == 1)
+    {
       dekf_sensor_fusion.publishRange_();
-      // ROS_INFO("Range: %.4f",dekf_sensor_fusion._range);
-
-
-
-
-
-
-
-      if (dekf_sensor_fusion._range(0) < 5.0 || dekf_sensor_fusion._range(1) < 5.0) {
-          dekf_sensor_fusion.SendCovariance();
-        }
-      else{
-
-        if (dekf_sensor_fusion.robot_name=="tb3_0") {
-          ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+      if (dekf_sensor_fusion._range(0) < 5.0 || dekf_sensor_fusion._range(1) < 5.0)
+      {
+        dekf_sensor_fusion.SendCovariance();
+      }
+      else
+      {
+        if (dekf_sensor_fusion.robot_name=="tb3_0")
+        {
+          ROS_ERROR_STREAM("Out of Range tb1");
           ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(0));
-          ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_ERROR_STREAM("Out of Range tb2");
           ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
         }
-        else if (dekf_sensor_fusion.robot_name=="tb3_1") {
-          ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+        else if (dekf_sensor_fusion.robot_name=="tb3_1")
+        {
           ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
-          ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_ERROR_STREAM("Out of Range tb2");
           ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
         }
-        else if (dekf_sensor_fusion.robot_name=="tb3_2") {
-          ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+        else if (dekf_sensor_fusion.robot_name=="tb3_2")
+        {
+          ROS_ERROR_STREAM("Out of Range tb0");
           ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
-          ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_ERROR_STREAM("Out of Range tb1");
           ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(1));
         }
       }
-
-
-
-
-
-
-
-
-      // if (dekf_sensor_fusion._range(0) < 5.0) {
-      //     dekf_sensor_fusion.SendCovariance();
-      //   }
-      // else{
-      //
-      //   if (dekf_sensor_fusion.robot_name=="tb3_0") {
-      //     ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-      //     ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(0));
-      //   }
-      //   else if (dekf_sensor_fusion.robot_name=="tb3_1") {
-      //     ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-      //     ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
-      //   }
-      //   else if (dekf_sensor_fusion.robot_name=="tb3_2") {
-      //     ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-      //     ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
-      //
-      // }
-      //
-      // }
-      //
-      //   if (dekf_sensor_fusion._range(1) < 5.0) {
-      //       dekf_sensor_fusion.SendCovariance();
-      //   }
-      //   else{
-      //
-      //     if (dekf_sensor_fusion.robot_name=="tb3_0") {
-      //       ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-      //       ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
-      //     }
-      //     else if (dekf_sensor_fusion.robot_name=="tb3_1") {
-      //       ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-      //       ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
-      //     }
-      //     else if (dekf_sensor_fusion.robot_name=="tb3_2") {
-      //       ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-      //       ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(1));
-      //     }
-      //   }
-        //
-        // if (dekf_sensor_fusion._range(0) > 5.0 && dekf_sensor_fusion._range(1) > 5.0) {
-        //   ROS_INFO("Error: %.6f",dekf_sensor_fusion.error_im);
-        // }
-
-        // dekf_sensor_fusion.update_1 = 0;
-        // dekf_sensor_fusion.update_2 = 0;
-      }
+    }
     // ros::spinOnce();
     rate.sleep(); //TODO make sure if it affects the AsyncSpinner or not
     counter++;
+
   }
   return 0;
 }
