@@ -80,6 +80,8 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   truths_0 = 0;
   truths_1 = 0;
   truths_2 = 0;
+  // update_1 =0;
+  // update_2 =0;
   relative_update_done = 0;
   gps_update_done = 0;
   // stop_propation = 0;
@@ -562,7 +564,8 @@ void DekfSensorFusion::voCallback(const nav_msgs::Odometry::ConstPtr &msg)
 // Relative Update
 void DekfSensorFusion::relativeUpdate()
 {
-//
+  ROS_INFO_STREAM(robot_name<< " & " <<robot_id_received);
+      // ROS_WARN("Relative Update Done");
 //     MatrixXd covariances(30,30);
 //     P_d1 = _globalP.block<15,15>(0,0);  //Sigma_ii
 //     P_d12 = _globalP.block<15,15>(0,15); //Sigma_ij
@@ -809,6 +812,8 @@ void DekfSensorFusion::SendCovariance()
   srv_cov_share.request.poscov.err_twist = err_twist_;
   srv_cov_share.request.poscov.err_bias = err_bias_;
 
+  srv_cov_share.request.poscov.robot_id.data = robot_name;
+
   state_sent << pose_.orientation.x,pose_.orientation.y,pose_.orientation.z,twist_.x,twist_.y,twist_.z,pose_.position.x,pose_.position.y,pose_.position.z,bias_.linear.x,bias_.linear.y,bias_.linear.z,bias_.angular.x,bias_.angular.y,bias_.angular.z;
   err_state_sent << err_pose_.orientation.x,err_pose_.orientation.y,err_pose_.orientation.z,err_twist_.x,err_twist_.y,err_twist_.z,err_pose_.position.x,err_pose_.position.y,err_pose_.position.z,err_bias_.linear.x,err_bias_.linear.y,err_bias_.linear.z,err_bias_.angular.x,err_bias_.angular.y,err_bias_.angular.z;
 
@@ -838,41 +843,121 @@ void DekfSensorFusion::SendCovariance()
 
   srv_cov_share.request.poscov.globalCov = senderV;
 
-  if(!dekf_sensor_fusion_client_1.call(srv_cov_share))
+  // update_1 = 1;
+  // update_2 = 1;
+
+  if(!dekf_sensor_fusion_client_1.call(srv_cov_share) && _range(0) < 5)
   {
 
-      if (robot_name=="tb3_0" && _range(0) < 5) {
-        ROS_ERROR("Failed to call service tb1" );
-        ROS_WARN("Range tb1: %.4f",_range(0));
+      if (robot_name=="tb3_0") {
+        ROS_ERROR("Failed to call Service tb1");
+        ROS_INFO("Range tb1: %.4f",_range(0));
       }
-      else if (robot_name=="tb3_1" && _range(0) < 5) {
-        ROS_ERROR("Failed to call service tb0");
-        ROS_WARN("Range tb0: %.4f",_range(0));
+      else if (robot_name=="tb3_1") {
+        ROS_ERROR("Failed to call Service tb0");
+        ROS_INFO("Range tb0: %.4f",_range(0));
       }
-      else if (robot_name=="tb3_2" && _range(0) < 5) {
-        ROS_ERROR("Failed to call service tb0");
-        ROS_WARN("Range tb0: %.4f",_range(0));
+      else if (robot_name=="tb3_2") {
+        ROS_ERROR("Failed to call Service tb0");
+        ROS_INFO("Range tb0: %.4f",_range(0));
       }
+      // update_1 = 0;
   }
 
-  if(!dekf_sensor_fusion_client_2.call(srv_cov_share))
+  // else if(!dekf_sensor_fusion_client_1.call(srv_cov_share) && _range(0) > 5)
+  // {
+  //
+  //     if (robot_name=="tb3_0") {
+  //       ROS_ERROR("Out of range tb1");
+  //       ROS_WARN("Range tb1: %.4f",_range(0));
+  //     }
+  //     else if (robot_name=="tb3_1") {
+  //       ROS_ERROR("Out of range tb0");
+  //       ROS_WARN("Range tb0: %.4f",_range(0));
+  //     }
+  //     else if (robot_name=="tb3_2") {
+  //       ROS_ERROR("Out of range tb0");
+  //       ROS_WARN("Range tb0: %.4f",_range(0));
+  //     }
+  //     // update_1 = 0;
+  // }
+
+  if(!dekf_sensor_fusion_client_2.call(srv_cov_share) && _range(1) < 5)
   {
 
-      if (robot_name=="tb3_0" && _range(1) < 5) {
-        ROS_ERROR("Failed to call service tb2");
-        ROS_WARN("Range tb2: %.4f",_range(1));
+      if (robot_name=="tb3_0") {
+        ROS_ERROR("Failed to call Service tb2");
+        ROS_INFO("Range tb2: %.4f",_range(1));
       }
-      else if (robot_name=="tb3_1" && _range(1) < 5) {
-        ROS_ERROR("Failed to call service tb2");
-        ROS_WARN("Range tb2: %.4f",_range(1));
+      else if (robot_name=="tb3_1") {
+        ROS_ERROR("Failed to call Service tb2");
+        ROS_INFO("Range tb2: %.4f",_range(1));
       }
-      else if (robot_name=="tb3_2" && _range(1) < 5) {
-        ROS_ERROR("Failed to call service tb1");
+      else if (robot_name=="tb3_2") {
+        ROS_ERROR("Failed to call Service tb1");
         // error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
-        ROS_WARN("Range tb1: %.4f",_range(1));
+        ROS_INFO("Range tb1: %.4f",_range(1));
         // ROS_INFO("Error: %.6f",error);
       }
+      // update_2 = 0;
   }
+
+  // else if(!dekf_sensor_fusion_client_2.call(srv_cov_share) && _range(1) > 5)
+  // {
+  //
+  //     if (robot_name=="tb3_0") {
+  //       ROS_ERROR("Out of range tb2");
+  //       ROS_WARN("Range tb2: %.4f",_range(1));
+  //     }
+  //     else if (robot_name=="tb3_1") {
+  //       ROS_ERROR("Out of range tb2");
+  //       ROS_WARN("Range tb2: %.4f",_range(1));
+  //     }
+  //     else if (robot_name=="tb3_2") {
+  //       ROS_ERROR("Out of range tb1");
+  //       // error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
+  //       ROS_WARN("Range tb1: %.4f",_range(1));
+  //       // ROS_INFO("Error: %.6f",error);
+  //     }
+  //     update_2 = 0;
+  // }
+
+  if (robot_name=="tb3_0") {
+    if (_range(0)>5) {
+      ROS_ERROR("Out of Range tb1");
+      ROS_INFO("Range tb1: %.4f",_range(0));
+    }
+    else if (_range(1)>5) {
+      ROS_ERROR("Out of Range tb2");
+      ROS_INFO("Range tb2: %.4f",_range(1));
+    }
+  }
+  else if (robot_name=="tb3_1") {
+    if (_range(0)>5) {
+      ROS_ERROR("Out of Range tb0");
+      ROS_INFO("Range tb0: %.4f",_range(0));
+    }
+    else if (_range(1)>5) {
+      ROS_ERROR("Out of Range tb2");
+      ROS_INFO("Range tb2: %.4f",_range(1));
+    }
+  }
+  else if (robot_name=="tb3_2") {
+    if (_range(0)>5) {
+      ROS_ERROR("Out of Range tb0");
+      ROS_INFO("Range tb0: %.4f",_range(0));
+    }
+    else if (_range(1)>5) {
+      ROS_ERROR("Out of Range tb1");
+      ROS_INFO("Range tb1: %.4f",_range(1));
+    }
+    // // error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
+    // ROS_WARN("Range tb1: %.4f",_range(1));
+    // ROS_INFO("Error: %.6f",error);
+  }
+
+
+
 
 }
 
@@ -891,8 +976,7 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
                     req.poscov.err_bias.linear.x,req.poscov.err_bias.linear.y,req.poscov.err_bias.linear.z,
                     req.poscov.err_bias.angular.x,req.poscov.err_bias.angular.y,req.poscov.err_bias.angular.z;
 
-
-  // std::cout << "err_states in calculation" <<'\n'<< err_state_received<<'\n';
+  robot_id_received = req.poscov.robot_id.data;
 
   MatrixXd receivedCov(15,45);
   int count=0;
@@ -903,33 +987,54 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
     }
   }
 
-  if (robot_name=="tb3_0") {
-    if (_range(0)<5) {
-      _globalP.block<15,45>(15,0) << receivedCov;
-    }
-    else if(_range(1)<5) {
-      _globalP.block<15,45>(30,0) << receivedCov;
-    }
-  }
-  else if (robot_name=="tb3_1") {
-    if (_range(0)<5) {
-      _globalP.block<15,45>(0,0) << receivedCov;
-    }
-    else if(_range(1)<5) {
-      _globalP.block<15,45>(30,0) << receivedCov;
-    }
-  }
-  else if (robot_name=="tb3_2") {
-    if (_range(0)<5) {
-      _globalP.block<15,45>(0,0) << receivedCov;
-    }
-    else if(_range(1)<5) {
-      _globalP.block<15,45>(15,0) << receivedCov;
-    }
-  }
-  // std::cout << "State Shared" << '\n';
+
   if (initializer == 1) {
-    relativeUpdate();
+    if (robot_name=="tb3_0") {
+      if (robot_id_received == "tb3_1" && _range(0)<5) {
+        _globalP.block<15,45>(15,0) << receivedCov;
+        ROS_WARN("Relative Update tb1");
+        ROS_INFO("Range tb1: %.4f",_range(0));
+        relativeUpdate();
+      }
+      if(robot_id_received == "tb3_2" && _range(1)<5) {
+        _globalP.block<15,45>(30,0) << receivedCov;
+        ROS_WARN("Relative Update tb2");
+        ROS_INFO("Range tb2: %.4f",_range(1));
+        relativeUpdate();
+      }
+    }
+    else if (robot_name=="tb3_1") {
+      if (robot_id_received == "tb3_0" && _range(0)<5) {
+        _globalP.block<15,45>(0,0) << receivedCov;
+        ROS_WARN("Relative Update tb0");
+        ROS_INFO("Range tb0: %.4f",_range(0));
+        relativeUpdate();
+      }
+      if(robot_id_received == "tb3_2" && _range(1)<5) {
+        _globalP.block<15,45>(30,0) << receivedCov;
+        ROS_WARN("Relative Update tb2");
+        ROS_INFO("Range tb2: %.4f",_range(1));
+        relativeUpdate();
+      }
+    }
+    else if (robot_name=="tb3_2") {
+      if (robot_id_received == "tb3_0" && _range(0)<5) {
+        _globalP.block<15,45>(0,0) << receivedCov;
+        ROS_WARN("Relative Update tb0");
+        ROS_INFO("Range tb0: %.4f",_range(0));
+        relativeUpdate();
+      }
+      if(robot_id_received == "tb3_1" && _range(1)<5) {
+        _globalP.block<15,45>(15,0) << receivedCov;
+        ROS_WARN("Relative Update tb1");
+        ROS_INFO("Range tb1: %.4f",_range(1));
+        relativeUpdate();
+      }
+    }
+  // std::cout << "State Shared" << '\n';
+  // if (initializer == 1) {
+  //   relativeUpdate();
+// }
   }
   return true;
 }
@@ -1170,7 +1275,7 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
 
-
+    ROS_INFO("----------------");
 
     if (dekf_sensor_fusion.initializer == 0 && dekf_sensor_fusion.truths_0 == 1 && dekf_sensor_fusion.truths_1 == 1 && dekf_sensor_fusion.truths_2 == 1) {
       dekf_sensor_fusion.initialization();
@@ -1179,50 +1284,90 @@ int main(int argc, char **argv)
       dekf_sensor_fusion.publishRange_();
       // ROS_INFO("Range: %.4f",dekf_sensor_fusion._range);
 
-      if (dekf_sensor_fusion._range(0) < 5.0) {
+
+
+
+
+
+
+      if (dekf_sensor_fusion._range(0) < 5.0 || dekf_sensor_fusion._range(1) < 5.0) {
           dekf_sensor_fusion.SendCovariance();
         }
       else{
 
         if (dekf_sensor_fusion.robot_name=="tb3_0") {
           ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-          ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(0));
+          ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(0));
+          ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
         }
         else if (dekf_sensor_fusion.robot_name=="tb3_1") {
           ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-          ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+          ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+          ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
         }
         else if (dekf_sensor_fusion.robot_name=="tb3_2") {
           ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-          ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
-
+          ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+          ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+          ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(1));
+        }
       }
 
-      }
 
-        if (dekf_sensor_fusion._range(1) < 5.0) {
-            dekf_sensor_fusion.SendCovariance();
-        }
-        else{
 
-          if (dekf_sensor_fusion.robot_name=="tb3_0") {
-            ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-            ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
-          }
-          else if (dekf_sensor_fusion.robot_name=="tb3_1") {
-            ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-            ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
-          }
-          else if (dekf_sensor_fusion.robot_name=="tb3_2") {
-            ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
-            ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(1));
-          }
-        }
 
-        if (dekf_sensor_fusion._range(0) > 5.0 && dekf_sensor_fusion._range(1) > 5.0) {
-          ROS_INFO("Error: %.6f",dekf_sensor_fusion.error_im);
-        }
 
+
+
+
+      // if (dekf_sensor_fusion._range(0) < 5.0) {
+      //     dekf_sensor_fusion.SendCovariance();
+      //   }
+      // else{
+      //
+      //   if (dekf_sensor_fusion.robot_name=="tb3_0") {
+      //     ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+      //     ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(0));
+      //   }
+      //   else if (dekf_sensor_fusion.robot_name=="tb3_1") {
+      //     ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+      //     ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+      //   }
+      //   else if (dekf_sensor_fusion.robot_name=="tb3_2") {
+      //     ROS_ERROR_STREAM("Out of Range tb0"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+      //     ROS_WARN("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+      //
+      // }
+      //
+      // }
+      //
+      //   if (dekf_sensor_fusion._range(1) < 5.0) {
+      //       dekf_sensor_fusion.SendCovariance();
+      //   }
+      //   else{
+      //
+      //     if (dekf_sensor_fusion.robot_name=="tb3_0") {
+      //       ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+      //       ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
+      //     }
+      //     else if (dekf_sensor_fusion.robot_name=="tb3_1") {
+      //       ROS_ERROR_STREAM("Out of Range tb2"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+      //       ROS_WARN("Range tb2: %.4f",dekf_sensor_fusion._range(1));
+      //     }
+      //     else if (dekf_sensor_fusion.robot_name=="tb3_2") {
+      //       ROS_ERROR_STREAM("Out of Range tb1"); // TODO: WHen GPS is turned off for one drone, it still sends pose/cov no matter what the range is. Investigate that.
+      //       ROS_WARN("Range tb1: %.4f",dekf_sensor_fusion._range(1));
+      //     }
+      //   }
+        //
+        // if (dekf_sensor_fusion._range(0) > 5.0 && dekf_sensor_fusion._range(1) > 5.0) {
+        //   ROS_INFO("Error: %.6f",dekf_sensor_fusion.error_im);
+        // }
+
+        // dekf_sensor_fusion.update_1 = 0;
+        // dekf_sensor_fusion.update_2 = 0;
       }
     // ros::spinOnce();
     rate.sleep(); //TODO make sure if it affects the AsyncSpinner or not

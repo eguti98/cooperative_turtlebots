@@ -17,6 +17,7 @@
 #include "dekf_sensor_fusion/globalCovariance.h"
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/String.h>
 
 using namespace Eigen;
 class DekfSensorFusion
@@ -29,6 +30,7 @@ public:
   void publishRange_();
   // std::string node_name;
   std::string robot_name;
+  std::string robot_id_received;
   Eigen::Matrix <double, 15, 1>  state_received;
   Eigen::Matrix <double, 15, 1>  state_sent;
   Eigen::Matrix <double, 15, 1>  err_state_received;
@@ -70,6 +72,8 @@ public:
   bool stop_propation;
   bool relative_update_done;
   bool gps_update_done;
+  // bool update_1;
+  // bool update_2;
   // double _range;
   double res_range;
   double error_im;
@@ -107,6 +111,8 @@ private:
   geometry_msgs::Pose err_pose_;
   geometry_msgs::Twist err_bias_;
   geometry_msgs::Point32 err_twist_;
+  std_msgs::String robot_id;
+
   Eigen::Matrix <double, 15, 15> P_;
   Eigen::Matrix <double, 15, 1> _x;
 
