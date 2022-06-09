@@ -74,6 +74,7 @@ public:
   bool gps_update_done;
 
   double res_range;
+  double range_update;
   double error_im;
   Matrix3d eye3=Eigen::Matrix3d::Identity();
   Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);

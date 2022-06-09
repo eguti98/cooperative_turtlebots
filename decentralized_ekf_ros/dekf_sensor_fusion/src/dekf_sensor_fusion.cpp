@@ -348,7 +348,7 @@ void DekfSensorFusion::voCallback(const nav_msgs::Odometry::ConstPtr &msg)
 //
 void DekfSensorFusion::relativeUpdate()
 {
-  ROS_INFO_STREAM(robot_name << " & " << robot_id_received);
+
   MatrixXd covariances(30,30);
 
   if (robot_name=="tb3_0")
@@ -371,6 +371,8 @@ void DekfSensorFusion::relativeUpdate()
       err_state1=_error_states;                // Error state
       state2 = state_received;                 // Total state received
       err_state2=err_state_received;           // Error state received
+
+      range_update = _range(0);
     }
     else if (robot_id_received=="tb3_2")
     {
@@ -390,6 +392,8 @@ void DekfSensorFusion::relativeUpdate()
       err_state1 = _error_states;              // Error state
       state2 = state_received;                 // Total state received
       err_state2 = err_state_received;         // Error state received
+
+      range_update = _range(1);
     }
   }
   else if (robot_name=="tb3_1")
@@ -412,6 +416,8 @@ void DekfSensorFusion::relativeUpdate()
       err_state1 = err_state_received;           // Error state
       state2 = _x;                               // Total state received
       err_state2 = _error_states;                // Error state received
+
+      range_update = _range(0);
     }
     else if (robot_id_received=="tb3_2")
     {
@@ -431,6 +437,8 @@ void DekfSensorFusion::relativeUpdate()
       err_state1 = _error_states;                 // Error state
       state2 = state_received;                    // Total state received
       err_state2 = err_state_received;            // Error state received
+
+      range_update = _range(1);
     }
   }
   else if (robot_name=="tb3_2")
@@ -453,6 +461,8 @@ void DekfSensorFusion::relativeUpdate()
       err_state1 = err_state_received;           // Error state
       state2 = _x;                               // Total state received
       err_state2 = _error_states;                // Error state received
+
+      range_update = _range(0);
     }
     else if (robot_id_received=="tb3_1")
     {
@@ -472,51 +482,56 @@ void DekfSensorFusion::relativeUpdate()
       err_state1 = err_state_received;           // Error state
       state2 = _x;                               // Total state received
       err_state2 = _error_states;                // Error state received
+
+      range_update = _range(1);
     }
   }
 
   states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
   err_states << err_state1(0),err_state1(1),err_state1(2),err_state1(3),err_state1(4),err_state1(5),err_state1(6),err_state1(7),err_state1(8),err_state1(9),err_state1(10),err_state1(11),err_state1(12),err_state1(13),err_state1(14),err_state2(0),err_state2(1),err_state2(2),err_state2(3),err_state2(4),err_state2(5),err_state2(6),err_state2(7),err_state2(8),err_state2(9),err_state2(10),err_state2(11),err_state2(12),err_state2(13),err_state2(14);
 
-//     h_range = sqrt(pow((states(21)-states(6)),2)+pow((states(22)-states(7)),2)+pow((states(23)-states(8)),2));
-//
-//     H_range << 0,0,0,0,0,0,
-//                -(states(21)-states(6)) / h_range,
-//                -(states(22)-states(7)) / h_range,
-//                -(states(23)-states(8)) / h_range,
-//                0,0,0,0,0,0,
-//                0,0,0,0,0,0,
-//               (states(21)-states(6)) / h_range,
-//               (states(22)-states(7)) / h_range,
-//               (states(23)-states(8)) / h_range,
-//               0,0,0,0,0,0;
-//
-//     MatrixXd S(1, 1);
-//     S = H_range * covariances * H_range.transpose() + R_range;
-//
-//     MatrixXd K_range(30, 1);
-//     K_range = covariances * H_range.transpose() * S.inverse();
-//
-//     res_range = _range - h_range;
-//     // res_range =0.0;
-//
-//     if (abs(res_range) > 500.0) {
-//       // return;
-//       std::cout << "Residual more than 500m" << '\n';
-//       /* Perform Zupt? */
-//     }
-//     // else {
-//       MatrixXd I30(30,30);
-//       I30.setIdentity();
-//
-//
-//       err_states = err_states + K_range*res_range;
-//       // std::cout << "err_states after" <<'\n'<< err_states  <<'\n';
-//
-//       covariances = (I30 - K_range*H_range)*covariances;
-//       // covariances = (I30 - K_range*H_range)*covariances*(I30 - K_range*H_range).inverse() + K_range*R_range*K_range.transpose();
-//
-//           if (robot_name=="tb3_0") {
+  h_range = sqrt(pow((states(21)-states(6)),2)+pow((states(22)-states(7)),2)+pow((states(23)-states(8)),2));
+
+  H_range << 0,0,0,0,0,0,
+             -(states(21)-states(6)) / h_range,
+             -(states(22)-states(7)) / h_range,
+             -(states(23)-states(8)) / h_range,
+             0,0,0,0,0,0,
+             0,0,0,0,0,0,
+            (states(21)-states(6)) / h_range,
+            (states(22)-states(7)) / h_range,
+            (states(23)-states(8)) / h_range,
+            0,0,0,0,0,0;
+
+  MatrixXd S(1, 1);
+  S = H_range * covariances * H_range.transpose() + R_range;
+
+  MatrixXd K_range(30, 1);
+  K_range = covariances * H_range.transpose() * S.inverse();
+
+  res_range = range_update - h_range;
+
+  if (abs(res_range) > 500.0)
+  {
+      // return;
+      ROS_ERROR("Relative Update Ignored")
+      ROS_INFO_STREAM(robot_name << " & " << robot_id_received);
+      /* Perform Zupt? */
+  }
+  else
+  {
+
+      MatrixXd I30(30,30);
+      I30.setIdentity();
+
+      err_states = err_states + K_range*res_range;
+      // std::cout << "err_states after" <<'\n'<< err_states  <<'\n';
+
+      covariances = (I30 - K_range*H_range)*covariances;
+      // covariances = (I30 - K_range*H_range)*covariances*(I30 - K_range*H_range).inverse() + K_range*R_range*K_range.transpose();
+
+    if (robot_name=="tb3_0")
+    {
 //
 //
 //             range_est = err_states.segment(0,15); //error_states
@@ -552,6 +567,9 @@ void DekfSensorFusion::relativeUpdate()
 //             _error_states<<err_states.segment(0,15);
 //
 //
+  //        COORRELATION WITH OTHER ROBOT
+
+
 //             _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
 //             _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
 //             _globalP.block<15,15>(15,0) = (covariances.block<15,15>(0,15)).transpose();
@@ -572,8 +590,9 @@ void DekfSensorFusion::relativeUpdate()
 //             error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
 //             ROS_INFO("Error: %.4f",error);
 //
-//           }
-//           else if (robot_name=="tb3_1") {
+    }
+    else if (robot_name=="tb3_1")
+    {
 //
 //
 //             range_est = err_states.segment(15,15); //errorstates
@@ -624,10 +643,12 @@ void DekfSensorFusion::relativeUpdate()
 //             error = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
 //             ROS_INFO("Error: %.4f",error);
 //
-//           }
-//
-//
-//     // stop_propation = 0;
+    }
+    else if (robot_name=="tb3_2")
+    {
+
+    }
+  }
 }
 //
 // SERVER
@@ -762,15 +783,12 @@ void DekfSensorFusion::SendCovariance()
 
   if (robot_name=="tb3_0") {
     sender = _globalP.block<15,45>(0,0);
-    sender(0,0) = 100;
   }
   else if (robot_name=="tb3_1") {
     sender = _globalP.block<15,45>(15,0);
-    sender(0,15) = 200;
   }
   else if (robot_name=="tb3_2") {
     sender = _globalP.block<15,45>(30,0);
-    sender(0,30) = 300;
   }
 
   int count=0;
