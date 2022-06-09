@@ -349,56 +349,135 @@ void DekfSensorFusion::voCallback(const nav_msgs::Odometry::ConstPtr &msg)
 void DekfSensorFusion::relativeUpdate()
 {
   ROS_INFO_STREAM(robot_name << " & " << robot_id_received);
-      // ROS_WARN("Relative Update Done");
-//     MatrixXd covariances(30,30);
-//     P_d1 = _globalP.block<15,15>(0,0);  //Sigma_ii
-//     P_d12 = _globalP.block<15,15>(0,15); //Sigma_ij
-//     P_d21 = _globalP.block<15,15>(15,0); //Sigma_ij.transpose() or Sigma_ji ?
-//     P_d2 = _globalP.block<15,15>(15,15);  //Sigma_jj
-//
-//     if (robot_name=="tb3_0") {
-//
-//       P_corr = P_d12 * P_d21.transpose();
-//       state1 = _x; // Use current total state
-//       err_state1=_error_states;
-//       state2 = state_received;
-//       // state2(6) = 0;
-//       // state2(7) = 0;
-//       // state2(8) = 0;
-//       err_state2=err_state_received;
-//       // state1 = state_sent; // Use the total state that has been sent
-//
-//       P_corr2 = P_corr.transpose();
-//
-//       covariances.block<15,15>(0,0) = P_d1;
-//       covariances.block<15,15>(0,15) = P_corr;
-//       covariances.block<15,15>(15,0) = P_corr2;
-//       covariances.block<15,15>(15,15) = P_d2;
-//       // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
-//     }
-//     else if (robot_name=="tb3_1") { //only state2 is the problematic one
-//       P_corr = P_d21 * P_d12.transpose();
-//       state1 = state_received;
-//       // state1(6) = -1;
-//       // state1(7) = -0.14;
-//       // state1(8) = 0;
-//       err_state1 = err_state_received;
-//       state2 =_x; // Use current total state
-//       err_state2 = _error_states;
-//       // state2 = state_sent; // Use the total state that has been sent.
-//
-//       P_corr2 = P_corr.transpose();
-//
-//       covariances.block<15,15>(0,0) = P_d1;
-//       covariances.block<15,15>(0,15) = P_corr2;
-//       covariances.block<15,15>(15,0) = P_corr;
-//       covariances.block<15,15>(15,15) = P_d2;
-//       // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
-//     }
-//
-//     states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
-//     err_states << err_state1(0),err_state1(1),err_state1(2),err_state1(3),err_state1(4),err_state1(5),err_state1(6),err_state1(7),err_state1(8),err_state1(9),err_state1(10),err_state1(11),err_state1(12),err_state1(13),err_state1(14),err_state2(0),err_state2(1),err_state2(2),err_state2(3),err_state2(4),err_state2(5),err_state2(6),err_state2(7),err_state2(8),err_state2(9),err_state2(10),err_state2(11),err_state2(12),err_state2(13),err_state2(14);
-//
+  MatrixXd covariances(30,30);
+
+  if (robot_name=="tb3_0")
+  {
+    if (robot_id_received=="tb3_1")
+    {
+      P_d1 = _globalP.block<15,15>(0,0);        //Sigma_ii
+      P_d12 = _globalP.block<15,15>(0,15);      //Sigma_ij
+      P_d21 = _globalP.block<15,15>(15,0);      //Sigma_ji
+      P_d2 = _globalP.block<15,15>(15,15);      //Sigma_jj
+      P_corr = P_d12 * P_d21.transpose();
+      P_corr2 = P_corr.transpose();
+
+      covariances.block<15,15>(0,0) = P_d1;
+      covariances.block<15,15>(0,15) = P_corr;
+      covariances.block<15,15>(15,0) = P_corr2;
+      covariances.block<15,15>(15,15) = P_d2;
+
+      state1 = _x;                             // Total state
+      err_state1=_error_states;                // Error state
+      state2 = state_received;                 // Total state received
+      err_state2=err_state_received;           // Error state received
+    }
+    else if (robot_id_received=="tb3_2")
+    {
+      P_d1 = _globalP.block<15,15>(0,0);        //Sigma_ii
+      P_d12 = _globalP.block<15,15>(0,30);      //Sigma_ij
+      P_d21 = _globalP.block<15,15>(30,0);      //Sigma_ji
+      P_d2 = _globalP.block<15,15>(30,30);      //Sigma_jj
+      P_corr = P_d12 * P_d21.transpose();
+      P_corr2 = P_corr.transpose();
+
+      covariances.block<15,15>(0,0) = P_d1;
+      covariances.block<15,15>(0,15) = P_corr;
+      covariances.block<15,15>(15,0) = P_corr2;
+      covariances.block<15,15>(15,15) = P_d2;
+
+      state1 = _x;                             // Total state
+      err_state1 = _error_states;              // Error state
+      state2 = state_received;                 // Total state received
+      err_state2 = err_state_received;         // Error state received
+    }
+  }
+  else if (robot_name=="tb3_1")
+  {
+    if (robot_id_received=="tb3_0")
+    {
+      P_d1 = _globalP.block<15,15>(0,0);        //Sigma_ii
+      P_d12 = _globalP.block<15,15>(0,15);      //Sigma_ij
+      P_d21 = _globalP.block<15,15>(15,0);      //Sigma_ji
+      P_d2 = _globalP.block<15,15>(15,15);      //Sigma_jj
+      P_corr = P_d21 * P_d12.transpose();
+      P_corr2 = P_corr.transpose();
+
+      covariances.block<15,15>(0,0) = P_d1;
+      covariances.block<15,15>(15,0) = P_corr;
+      covariances.block<15,15>(0,15) = P_corr2;
+      covariances.block<15,15>(15,15) = P_d2;
+
+      state1 = state_received;                   // Total state
+      err_state1 = err_state_received;           // Error state
+      state2 = _x;                               // Total state received
+      err_state2 = _error_states;                // Error state received
+    }
+    else if (robot_id_received=="tb3_2")
+    {
+      P_d1 = _globalP.block<15,15>(15,15);        //Sigma_ii
+      P_d12 = _globalP.block<15,15>(15,30);       //Sigma_ij
+      P_d21 = _globalP.block<15,15>(30,15);       //Sigma_ji
+      P_d2 = _globalP.block<15,15>(30,30);        //Sigma_jj
+      P_corr = P_d12 * P_d21.transpose();
+      P_corr2 = P_corr.transpose();
+
+      covariances.block<15,15>(0,0) = P_d1;
+      covariances.block<15,15>(0,15) = P_corr;
+      covariances.block<15,15>(15,0) = P_corr2;
+      covariances.block<15,15>(15,15) = P_d2;
+
+      state1 = _x;                                // Total state
+      err_state1 = _error_states;                 // Error state
+      state2 = state_received;                    // Total state received
+      err_state2 = err_state_received;            // Error state received
+    }
+  }
+  else if (robot_name=="tb3_2")
+  {
+    if (robot_id_received=="tb3_0")
+    {
+      P_d1 = _globalP.block<15,15>(0,0);        //Sigma_ii
+      P_d12 = _globalP.block<15,15>(0,30);      //Sigma_ij
+      P_d21 = _globalP.block<15,15>(30,0);      //Sigma_ji
+      P_d2 = _globalP.block<15,15>(30,30);      //Sigma_jj
+      P_corr = P_d21 * P_d12.transpose();
+      P_corr2 = P_corr.transpose();
+
+      covariances.block<15,15>(0,0) = P_d1;
+      covariances.block<15,15>(15,0) = P_corr;
+      covariances.block<15,15>(0,15) = P_corr2;
+      covariances.block<15,15>(15,15) = P_d2;
+
+      state1 = state_received;                   // Total state
+      err_state1 = err_state_received;           // Error state
+      state2 = _x;                               // Total state received
+      err_state2 = _error_states;                // Error state received
+    }
+    else if (robot_id_received=="tb3_1")
+    {
+      P_d1 = _globalP.block<15,15>(15,15);       //Sigma_ii
+      P_d12 = _globalP.block<15,15>(15,30);      //Sigma_ij
+      P_d21 = _globalP.block<15,15>(30,15);      //Sigma_ji
+      P_d2 = _globalP.block<15,15>(30,30);       //Sigma_jj
+      P_corr = P_d12 * P_d21.transpose();
+      P_corr2 = P_corr.transpose();
+
+      covariances.block<15,15>(0,0) = P_d1;
+      covariances.block<15,15>(0,15) = P_corr;
+      covariances.block<15,15>(15,0) = P_corr2;
+      covariances.block<15,15>(15,15) = P_d2;
+
+      state1 = state_received;                   // Total state
+      err_state1 = err_state_received;           // Error state
+      state2 = _x;                               // Total state received
+      err_state2 = _error_states;                // Error state received
+    }
+  }
+
+  states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
+  err_states << err_state1(0),err_state1(1),err_state1(2),err_state1(3),err_state1(4),err_state1(5),err_state1(6),err_state1(7),err_state1(8),err_state1(9),err_state1(10),err_state1(11),err_state1(12),err_state1(13),err_state1(14),err_state2(0),err_state2(1),err_state2(2),err_state2(3),err_state2(4),err_state2(5),err_state2(6),err_state2(7),err_state2(8),err_state2(9),err_state2(10),err_state2(11),err_state2(12),err_state2(13),err_state2(14);
+
 //     h_range = sqrt(pow((states(21)-states(6)),2)+pow((states(22)-states(7)),2)+pow((states(23)-states(8)),2));
 //
 //     H_range << 0,0,0,0,0,0,
@@ -683,23 +762,26 @@ void DekfSensorFusion::SendCovariance()
 
   if (robot_name=="tb3_0") {
     sender = _globalP.block<15,45>(0,0);
+    sender(0,0) = 100;
   }
   else if (robot_name=="tb3_1") {
     sender = _globalP.block<15,45>(15,0);
+    sender(0,15) = 200;
   }
   else if (robot_name=="tb3_2") {
     sender = _globalP.block<15,45>(30,0);
+    sender(0,30) = 300;
   }
+
   int count=0;
-    for (int i = 0; i < 15; i++) {
-      for (int j = 0; j < 45; j++) {
-        senderV[count]  = sender(i,j);
-        count++;
-      }
+  for (int i = 0; i < 15; i++) {
+    for (int j = 0; j < 45; j++) {
+      senderV[count]  = sender(i,j);
+      count++;
     }
+  }
 
   srv_cov_share.request.poscov.globalCov = senderV;
-
 
   if(!dekf_sensor_fusion_client_1.call(srv_cov_share) && _range(0) < 5)
   {
