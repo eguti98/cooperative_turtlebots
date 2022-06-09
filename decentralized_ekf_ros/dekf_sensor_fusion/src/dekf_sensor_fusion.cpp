@@ -561,8 +561,7 @@ void DekfSensorFusion::relativeUpdate()
         _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
-
-        // COORRELATION WITH OTHER ROBOT
+        // _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
 
         relative_update_done = 1;
         ROS_WARN("Relative Update Done");
@@ -601,8 +600,7 @@ void DekfSensorFusion::relativeUpdate()
         _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-
-        // COORRELATION WITH OTHER ROBOT
+        // _globalP.block<15,15>(0,15) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,15);
 
         relative_update_done = 1;
         ROS_WARN("Relative Update Done");
@@ -644,8 +642,7 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
-
-        // COORRELATION WITH OTHER ROBOT
+        // _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
 
         relative_update_done = 1;
         ROS_WARN("Relative Update Done");
@@ -684,8 +681,7 @@ void DekfSensorFusion::relativeUpdate()
         _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-
-        // COORRELATION WITH OTHER ROBOT
+        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,0);
 
         relative_update_done = 1;
         ROS_WARN("Relative Update Done");
@@ -727,8 +723,7 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-
-        // COORRELATION WITH OTHER ROBOT
+        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
 
         relative_update_done = 1;
         ROS_WARN("Relative Update Done");
@@ -765,8 +760,7 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-
-        // COORRELATION WITH OTHER ROBOT
+        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
 
         relative_update_done = 1;
         ROS_WARN("Relative Update Done");
