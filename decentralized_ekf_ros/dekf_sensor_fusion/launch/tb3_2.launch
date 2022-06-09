@@ -1,6 +1,6 @@
 <launch>
-  <group ns="tb3_0">
-    <param name="robot_name" value="tb3_0" />
+  <group ns="tb3_2">
+    <param name="robot_name" value="tb3_2" />
     <!-- <param name="robot_id" value="1" /> -->
 
     <!-- static transform from odom to map-->
@@ -8,8 +8,7 @@
 
     <!-- pcl_obstacle_avoidance launch file -->
     <include file="$(find dekf_sensor_fusion)/launch/dekf.launch"/>
-    
-
+    <!-- <include file="$(find turtlebot3_fake)/launch/tb3_2.launch"/> -->
   </group>
 
 </launch>

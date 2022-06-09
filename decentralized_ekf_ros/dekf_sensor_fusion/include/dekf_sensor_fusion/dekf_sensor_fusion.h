@@ -16,6 +16,7 @@
 #include <nav_msgs/Odometry.h>
 #include "dekf_sensor_fusion/globalCovariance.h"
 #include <std_msgs/Float64.h>
+#include <tf/transform_broadcaster.h>
 
 using namespace Eigen;
 class DekfSensorFusion
@@ -52,9 +53,11 @@ public:
   Eigen::Matrix <double, 15, 15> P_corr2;
   Eigen::Matrix <double, 15, 15> sigma_ij;
   Eigen::Matrix <double, 15, 15> sigma_ji;
-    Eigen::Matrix <double, 15, 1> _error_states;
+  Eigen::Matrix <double, 15, 1> _error_states;
+  Eigen::Matrix<double, 3, 3> ins_vel_ss;
   typedef Eigen::Matrix<double, 15, 1> Vector15;
   typedef Eigen::Matrix<double, 3, 1> Vector3;
+  DekfSensorFusion::Vector3 H11_, H12_, H21_, H31_, H32_, H24_, H41_, H42_;
   Vector3d V_old;
   Vector3d Pos_old;
 
@@ -64,12 +67,15 @@ public:
   bool stop_propation;
   bool relative_update_done;
   bool gps_update_done;
+  bool wo_update_done;
   double _range;
   double res_range;
   double error_im;
   Matrix3d eye3=Eigen::Matrix3d::Identity();
   Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);
   // ros::ServiceClient dekf_sensor_fusion_client;
+  tf::TransformBroadcaster odom_broadcaster_;
+  tf::Matrix3x3 Rbn_;
 private:
   ros::NodeHandle &nh_;
   ros::ServiceClient dekf_sensor_fusion_client;
@@ -79,6 +85,7 @@ private:
 //   // ros::Subscriber subVO_, subImu_, ...
   ros::Subscriber sub_imu; // Subscribe to IMU data
   ros::Subscriber sub_vo; // Subscribe to Visual Odometry TODO: Are we going to use RealSense VO or our VO?
+  ros::Subscriber sub_wo; // Subscribe to Visual Odometry TODO: Are we going to use RealSense VO or our VO?
   ros::Subscriber sub_GPS; // Subscribe to GPS data
   ros::Subscriber sub_Range; //Subscribe to Range data
   ros::Subscriber sub_Altimeter; //Subscribe to Altimeter data
@@ -127,8 +134,8 @@ private:
   Eigen::Matrix<double, 3, 15> H_zupt;
   Eigen::Matrix<double, 3, 15> H_zaru;
   Eigen::Matrix<double, 6, 15> H_zero;
-
-
+  Eigen::Matrix<double, 3, 15> H_wo;
+  Eigen::Matrix<double, 3, 3> R_wo;
   // VectorXd state1(15,1);
   // VectorXd state2(15,1);
   // VectorXd states(30,1);
@@ -138,7 +145,6 @@ private:
   // MatrixXd P_d21(15,15);
   // MatrixXd P_corr(15,15);
   // MatrixXd P_corr2(15,15);
-
 
   typedef Eigen::Matrix <double, 6, 1> Vector6d;
 
@@ -174,14 +180,16 @@ private:
   Vector3d z_gps_vel;
   Vector6d z_gps;
   VectorXd _dx;
-
-
+  Vector3d z_wo_vel;
+  Vector3d wo_vel;
+  Vector3d z_wo;
 
   float _posP;
   // MatrixXd _P;
   // MatrixXd _Q_ins;
   int _insUpdate;
   Matrix3d _euler2dcmV(double phi, double theta, double psi);
+  tf::Matrix3x3 _euler2dcmTF(tf::Vector3 attVec);
   Matrix3d _euler2dcm(Vector3d eulVec);
   Vector4d _dcm2qua(Matrix3d Cnb);
   Matrix3d _qua2dcm(Vector4d qua);
@@ -191,6 +199,7 @@ private:
   void imuCallback(const sensor_msgs::Imu::ConstPtr &msg);
   void voCallback(const nav_msgs::Odometry::ConstPtr &msg);
   void gpsCallback(const nav_msgs::Odometry::ConstPtr& msg);       // TODO: Fill this with GPS message type based on what sensor used.
+  void woCallback(const nav_msgs::Odometry::ConstPtr& msg);
   // void rangeCallback(const sensor_msgs::Range::ConstPtr &msg);
   void true_drone1Callback(const nav_msgs::Odometry::ConstPtr& msg);
   void true_drone2Callback(const nav_msgs::Odometry::ConstPtr& msg);
@@ -205,6 +214,7 @@ private:
   void zeroUpdate();
   void nonHolonomicUpdate();
   void calculateProcessNoiseINS();
+  void calculateProcessNoiseINSzupt();
   // void relativeUpdate();
 };
 

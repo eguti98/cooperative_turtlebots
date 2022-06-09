@@ -37,26 +37,26 @@ bool Turtlebot3Fake::init()
 {
   // initialize ROS parameter
 
-  std::string robot_model = nh_.param<std::string>("tb3_model", "");
+  std::string robot_model = nh_.param<std::string>("robot_name", "");
 
-  if (!robot_model.compare("burger"))
-  {
-    wheel_seperation_ = 0.160;
-    turning_radius_   = 0.080;
-    robot_radius_     = 0.105;
-  }
-  else if (!robot_model.compare("waffle") || !robot_model.compare("waffle_pi"))
-  {
+  // if (!robot_model.compare("burger"))
+  // {
+  //   wheel_seperation_ = 0.160;
+  //   turning_radius_   = 0.080;
+  //   robot_radius_     = 0.105;
+  // }
+  // else if (!robot_model.compare("waffle") || !robot_model.compare("waffle_pi"))
+  // {
     wheel_seperation_ = 0.287;
     turning_radius_   = 0.1435;
     robot_radius_     = 0.220;
-  }
+  // }
 
   nh_.param("wheel_left_joint_name", joint_states_name_[LEFT],  std::string("wheel_left_joint"));
   nh_.param("wheel_right_joint_name", joint_states_name_[RIGHT],  std::string("wheel_right_joint"));
-  nh_.param("joint_states_frame", joint_states_.header.frame_id, std::string("base_footprint"));
+  nh_.param("joint_states_frame", joint_states_.header.frame_id, std::string("base_footprint2"));
   nh_.param("odom_frame", odom_.header.frame_id, std::string("odom"));
-  nh_.param("base_frame", odom_.child_frame_id, std::string("base_footprint"));
+  nh_.param("base_frame", odom_.child_frame_id, std::string("base_footprint2"));
 
   // initialize variables
   wheel_speed_cmd_[LEFT]  = 0.0;
@@ -93,8 +93,8 @@ bool Turtlebot3Fake::init()
   joint_states_.effort.resize(2,0.0);
 
   // initialize publishers
-  joint_states_pub_ = nh_.advertise<sensor_msgs::JointState>("joint_states", 100);
-  odom_pub_         = nh_.advertise<nav_msgs::Odometry>("odom", 100);
+  joint_states_pub_ = nh_.advertise<sensor_msgs::JointState>("joint_states2", 100);
+  odom_pub_         = nh_.advertise<nav_msgs::Odometry>("deadreckoning", 100);
 
   // initialize subscribers
   cmd_vel_sub_  = nh_.subscribe("cmd_vel", 100,  &Turtlebot3Fake::commandVelocityCallback, this);
@@ -163,8 +163,10 @@ bool Turtlebot3Fake::updateOdometry(ros::Duration diff_time)
   odom_pose_[2] += delta_theta;
 
   // compute odometric instantaneouse velocity
-  odom_vel_[0] = delta_s / diff_time.toSec();     // v
-  odom_vel_[1] = 0.0;
+  // odom_vel_[0] = delta_s / diff_time.toSec();     // v
+  odom_vel_[0] = delta_s * cos(odom_pose_[2] + (delta_theta / 2.0)) /diff_time.toSec();
+  // odom_vel_[1] = 0.0;
+  odom_vel_[1] = delta_s * sin(odom_pose_[2] + (delta_theta / 2.0)) /diff_time.toSec();
   odom_vel_[2] = delta_theta / diff_time.toSec(); // w
 
   odom_.pose.pose.position.x = odom_pose_[0];
@@ -174,6 +176,7 @@ bool Turtlebot3Fake::updateOdometry(ros::Duration diff_time)
 
   // We should update the twist of the odometry
   odom_.twist.twist.linear.x  = odom_vel_[0];
+  odom_.twist.twist.linear.y  = odom_vel_[1];
   odom_.twist.twist.angular.z = odom_vel_[2];
 
   return true;
