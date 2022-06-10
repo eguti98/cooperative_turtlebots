@@ -1461,6 +1461,7 @@ int main(int argc, char **argv)
         }
         else if (dekf_sensor_fusion.robot_name=="tb3_1")
         {
+          ROS_ERROR_STREAM("Out of Range tb0");
           ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
           ROS_ERROR_STREAM("Out of Range tb2");
           ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
