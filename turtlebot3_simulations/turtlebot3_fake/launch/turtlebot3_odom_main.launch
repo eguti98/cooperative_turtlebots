@@ -1,5 +1,0 @@
-
-<launch>
-  <node name="turtlebot3_fake" pkg="turtlebot3_fake_node" type="turtlebot3_fake_node" output="screen">
-  </node>
-</launch>

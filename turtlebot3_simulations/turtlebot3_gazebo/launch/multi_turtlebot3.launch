@@ -40,8 +40,6 @@
     </node>
 
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg first_tb3) -x $(arg first_tb3_x_pos) -y $(arg first_tb3_y_pos) -z $(arg first_tb3_z_pos) -Y $(arg first_tb3_yaw) -param robot_description" />
-    <!-- <node pkg="turtlebot3_fake" type="turtlebot3_fake_node" name="turtlebot3_fake_node" output="screen" /> -->
-    <include file="$(find turtlebot3_fake)/launch/turtlebot3_fake.launch"/>
   </group>
 
   <group ns = "$(arg second_tb3)">
@@ -53,8 +51,6 @@
     </node>
 
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg second_tb3) -x $(arg second_tb3_x_pos) -y $(arg second_tb3_y_pos) -z $(arg second_tb3_z_pos) -Y $(arg second_tb3_yaw) -param robot_description" />
-    <!-- <node pkg="turtlebot3_fake" type="turtlebot3_fake_node" name="turtlebot3_fake_node" output="screen" /> -->
-    <include file="$(find turtlebot3_fake)/launch/turtlebot3_fake.launch"/>
   </group>
 
   <group ns = "$(arg third_tb3)">
@@ -64,9 +60,7 @@
       <param name="publish_frequency" type="double" value="50.0" />
       <param name="tf_prefix" value="$(arg third_tb3)" />
     </node>
-    <!-- <node pkg="turtlebot3_fake" type="turtlebot3_fake_node" name="turtlebot3_fake_node" output="screen" /> -->
-    <!-- <include file="$(find turtlebot3_fake)/launch/tb3_2.launch"/> -->
-    <include file="$(find turtlebot3_fake)/launch/turtlebot3_fake.launch"/>
+
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg third_tb3) -x $(arg third_tb3_x_pos) -y $(arg third_tb3_y_pos) -z $(arg third_tb3_z_pos) -Y $(arg third_tb3_yaw) -param robot_description" />
   </group>
   <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot3_fake)/rviz/turtlebot3_fake.rviz"/> -->

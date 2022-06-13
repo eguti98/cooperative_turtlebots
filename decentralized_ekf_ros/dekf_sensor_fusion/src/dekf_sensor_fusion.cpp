@@ -75,14 +75,6 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   R_gpsVal << std::pow(0.1,2), std::pow(0.1,2), std::pow(0.1,2), std::pow(0.4,2), std::pow(0.4,2), std::pow(0.4,2);
   R_gps = R_gpsVal.asDiagonal();
 
-  H_wo = MatrixXd::Zero(3,15);
-  H_wo.block<3,3>(0,3) = MatrixXd::Zero(3,3)-MatrixXd::Identity(3,3);
-
-  Eigen::VectorXd R_woVal(3);
-  R_woVal << std::pow(0.01,2), std::pow(0.01,2), std::pow(0.001,2);
-  R_wo = R_woVal.asDiagonal();
-
-
   R_range << 0.2*0.2; // TODO: Value?
   initializer = 0;
   truths_0 = 0;
@@ -91,14 +83,14 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
   relative_update_done = 0;
   gps_update_done = 0;
-  wo_update_done = 0;
+
 
 
   R_zero << std::pow(0.01,2),0,0,0,0,0,
             0,std::pow(0.01,2),0,0,0,0,
             0,0,std::pow(0.0025,2),0,0,0,
-            0,0,0,std::pow(0.1,2),0,0,
-            0,0,0,0,std::pow(0.1,2),0,
+            0,0,0,std::pow(0.02,2),0,0,
+            0,0,0,0,std::pow(0.02,2),0,
             0,0,0,0,0,std::pow(1.0,2);
 
   // NON HOLONONOMIC R VALUES
@@ -123,17 +115,13 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
   sub_imu = nh.subscribe("imu", 10, &DekfSensorFusion::imuCallback, this);
   sub_GPS = nh.subscribe("gps", 1, &DekfSensorFusion::gpsCallback,this); ///uav0/mavros/global_position/local // this is not the specific gps topic
-  sub_wo= nh.subscribe("deadreckoning", 1, &DekfSensorFusion::woCallback,this);
-
   true_drone0 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone0Callback, this);
   true_drone1 = nh.subscribe("/tb3_1/truth", 1, &DekfSensorFusion::true_drone1Callback, this);
   true_drone2 = nh.subscribe("/tb3_2/truth", 1, &DekfSensorFusion::true_drone2Callback, this);
-
   vel_command_tb0 = nh.subscribe("/tb3_0/cmd_vel", 1, &DekfSensorFusion::vel_command_tb0Callback, this);
   vel_command_tb1 = nh.subscribe("/tb3_1/cmd_vel", 1, &DekfSensorFusion::vel_command_tb1Callback, this);
   vel_command_tb2 = nh.subscribe("/tb3_2/cmd_vel", 1, &DekfSensorFusion::vel_command_tb2Callback, this);
 }
-
 //
 // IMU Prediction
 //
@@ -180,8 +168,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       Matrix3d Cbn;
       Cbn = CbnMinus * (I + Omega_ib * _dt); // ignore Earth rate and corriolis terms
       _attitude = _dcm2euler(Cbn);
-      std::cout << "yaw" <<'\n'<< _attitude(2)<<'\n';
-      std::cout << "yawX" <<'\n'<< _x[2]<<'\n';
+
       Vector3d V_n_ib;
       V_n_ib=0.5*(Cbn+CbnMinus)*_imu_acce*_dt;
 
@@ -214,11 +201,40 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       // END - CALCULATE Q
       _P = STM * _P * STM.transpose() + _Q_ins; // Covariance Matrix
 
+  // START - Zero Update (ZUPT & ZARU)
+  if (robot_name=="tb3_0") {
+    // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
+    // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
+    if (zupt_command_0(0)==0 && zupt_command_0(1)==0) {
+      // zeroUpdate();
+      // nonHolonomicUpdate();
+      // // ROS_INFO("Zero Update Done");
+    }
+  }
+  else if (robot_name=="tb3_1") {
+    // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
+    // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
+    if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
+      zeroUpdate();
+      // nonHolonomicUpdate();
+      // ROS_INFO("Zero Update Done");
+    }
+  }
+  else if (robot_name=="tb3_2") {
+    // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
+    // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
+    if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
+      zeroUpdate();
+      // nonHolonomicUpdate();
+      // ROS_INFO("Zero Update Done");
+    }
+  }
+  // END - Zero Update (ZUPT & ZARU)
 
-// #define WHEEL_RADIUS                    0.033     // meter
-// wheel_seperation_ = 0.287;
-// turning_radius_   = 0.1435;
-// robot_radius_     = 0.220;
+  // START - nonHolonomic Update
+  // nonHolonomicUpdate();
+  // END - nonHolonomic Update
+
 
         // _attitude=Att_old;
         _vel=V_old;
@@ -244,43 +260,14 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
         error_im = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
       }
 
-
       ba(0)=ba(0)+_error_states(9);
       ba(1)=ba(1)+_error_states(10);
       ba(2)=ba(2)+_error_states(11);
       bg(0)=bg(0)+_error_states(12);
       bg(1)=bg(1)+_error_states(13);
       bg(2)=bg(2)+_error_states(14);
-    }
-      // START - Zero Update (ZUPT & ZARU)
-  if (robot_name=="tb3_0") {
-    // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
-    // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
-    if (zupt_command_0(0)==0 && zupt_command_0(1)==0) {
-      // zeroUpdate();
-      // nonHolonomicUpdate();
-      // // ROS_INFO("Zero Update Done");
-    }
-  }
-  else if (robot_name=="tb3_1") {
-    // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
-    // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
-    if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
-      // zeroUpdate();
-      // nonHolonomicUpdate();
-      // ROS_INFO("Zero Update Done");
-    }
-  }
-  else if (robot_name=="tb3_2") {
-    // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
-    // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
-    if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
-      // zeroUpdate();
-      // nonHolonomicUpdate();
-      // ROS_INFO("Zero Update Done");
-    }
-  }
-// nonHolonomicUpdate();
+
+
       _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
       _error_states.segment(9,6)<<Eigen::VectorXd::Zero(6);
 
@@ -289,7 +276,8 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     publishOdom_();
   }
   // else {return;}
-
+}
+//
 // GPS Update
 //
 void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
@@ -355,72 +343,7 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 //
 void DekfSensorFusion::voCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {}
-
-void DekfSensorFusion::woCallback(const nav_msgs::Odometry::ConstPtr &msg)
-{
-
-    if (initializer == 1) {
-      Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
-      Matrix3d Cbn = Cnb.transpose();
-      MatrixXd K_wo(15,3);
-
-      // gps_pos[0] = msg->pose.pose.position.x;
-      // gps_pos[1] = msg->pose.pose.position.y;
-      // gps_pos[2] = msg->pose.pose.position.z;
-
-
-      wo_vel[0] = msg->twist.twist.linear.x;
-      wo_vel[1] = msg->twist.twist.linear.y; //0
-      wo_vel[2] = msg->twist.twist.linear.z; //0
-      // std::cout << "----------------" << '\n';
-      // std::cout << "WO VEL"<<'\n' << wo_vel<<'\n';
-      // wo_vel=Cbn*wo_vel;
-      // std::cout << "WO VELAfter Transform" <<'\n'<< wo_vel<<'\n';
-      // std::cout << "VEL" <<'\n'<< _vel<<'\n';
-      // std::cout << "yaw" <<'\n'<< _attitude(2)<<'\n';
-      // std::cout << "yawX" <<'\n'<< _x[2]<<'\n';
-      // gps_vel[2] = msg->twist.twist.linear.z;
-
-      // z_gps_pos= gps_pos-_pos;
-      z_wo_vel= wo_vel-_vel;
-      // z_gps_pos= gps_pos-Pos_old;
-      // z_gps_vel= gps_vel-V_old;
-      K_wo = _P * H_wo.transpose() * (H_wo * _P * H_wo.transpose() + R_wo).inverse();
-
-      z_wo <<  z_wo_vel[0],z_wo_vel[1],wo_vel[2];
-      _error_states = _error_states + K_wo * (z_wo  - H_wo* _error_states);
-// std::cout << "POS before removal" <<'\n'<< _pos<<'\n';
-      _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cbn);
-      _vel = _vel-_error_states.segment(3,3);
-      _pos = _pos-_error_states.segment(6,3);
-      // V_old = V_old-_error_states.segment(3,3);
-      // Pos_old = Pos_old -_error_states.segment(6,3);
-      // std::cout << "VEL after removal" <<'\n'<< _vel<<'\n';
-      // std::cout << "Real VEL" <<'\n'<< true_position1.segment(6,3)<<'\n';
-      // std::cout << "yaw after removal" <<'\n'<< _attitude(2)<<'\n';
-      // std::cout << "yawX after removal" <<'\n'<< _x[2]<<'\n';
-      // std::cout << "POS after removal" <<'\n'<< _pos<<'\n';
-      _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
-
-      _P=(Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo ).transpose() + K_wo * R_wo * K_wo.transpose();
-
-
-      if (robot_name=="tb3_0") {
-        _globalP.block<15,15>(0,0) = _P;
-        _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo ).transpose() + K_wo * R_wo * K_wo.transpose();
-      }
-      else if (robot_name=="tb3_1") {
-        _globalP.block<15,15>(15,15) = _P;
-        _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo ).transpose() + K_wo * R_wo * K_wo.transpose();
-      }
-      wo_update_done = 1;
-
-      // publishOdom_();
-      // publishRange_();
-      // publishResidual_();
-    }
-}
-
+//
 // Relative Update
 //
 void DekfSensorFusion::relativeUpdate()
@@ -437,8 +360,6 @@ void DekfSensorFusion::relativeUpdate()
       P_d21 = _globalP.block<15,15>(15,0);      //Sigma_ji
       P_d2 = _globalP.block<15,15>(15,15);      //Sigma_jj
       P_corr = P_d12 * P_d21.transpose();
-
-
       P_corr2 = P_corr.transpose();
 
       covariances.block<15,15>(0,0) = P_d1;
@@ -450,7 +371,6 @@ void DekfSensorFusion::relativeUpdate()
       err_state1=_error_states;                // Error state
       state2 = state_received;                 // Total state received
       err_state2=err_state_received;           // Error state received
-
 
       range_update = _range(0);
     }
@@ -485,7 +405,6 @@ void DekfSensorFusion::relativeUpdate()
       P_d21 = _globalP.block<15,15>(15,0);      //Sigma_ji
       P_d2 = _globalP.block<15,15>(15,15);      //Sigma_jj
       P_corr = P_d21 * P_d12.transpose();
-
       P_corr2 = P_corr.transpose();
 
       covariances.block<15,15>(0,0) = P_d1;
@@ -1082,15 +1001,12 @@ void DekfSensorFusion::true_drone0Callback(const nav_msgs::Odometry::ConstPtr &m
   double orienty = msg->pose.pose.orientation.y;
   double orientz = msg->pose.pose.orientation.z;
   double orientw = msg->pose.pose.orientation.w;
-  double velx = msg->twist.twist.linear.x;
-  double vely = msg->twist.twist.linear.y; //0
-  double velz = msg->twist.twist.linear.z; //0
   tf::Quaternion q(orientx,orienty,orientz,orientw);
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  true_position0 << x,y,z,roll,pitch,yaw,velx,vely,velz;
+  true_position0 << x,y,z,roll,pitch,yaw;
   truths_0 = 1;
 
 }
@@ -1104,17 +1020,13 @@ void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &m
   double orienty = msg->pose.pose.orientation.y;
   double orientz = msg->pose.pose.orientation.z;
   double orientw = msg->pose.pose.orientation.w;
-  double velx = msg->twist.twist.linear.x;
-  double vely = msg->twist.twist.linear.y; //0
-  double velz = msg->twist.twist.linear.z; //0
   tf::Quaternion q(orientx,orienty,orientz,orientw);
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  true_position1 << x,y,z,roll,pitch,yaw,velx,vely,velz;
+  true_position1 << x,y,z,roll,pitch,yaw;
   truths_1 = 1;
-
 
 }
 void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &msg)
@@ -1127,15 +1039,12 @@ void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &m
   double orienty = msg->pose.pose.orientation.y;
   double orientz = msg->pose.pose.orientation.z;
   double orientw = msg->pose.pose.orientation.w;
-  double velx = msg->twist.twist.linear.x;
-  double vely = msg->twist.twist.linear.y; //0
-  double velz = msg->twist.twist.linear.z; //0
   tf::Quaternion q(orientx,orienty,orientz,orientw);
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  true_position2 << x,y,z,roll,pitch,yaw,velx,vely,velz;
+  true_position2 << x,y,z,roll,pitch,yaw;
   truths_2 = 1;
 
 }
@@ -1247,37 +1156,6 @@ Matrix3d DekfSensorFusion::_euler2dcm(Vector3d eulVec)
   return C3 * C2 * C1;
 
 }
-
-  tf::Matrix3x3 DekfSensorFusion::_euler2dcmTF(tf::Vector3 attVec)
-{
-  // from Titterton and Weston & adapted from MS Braasch Matlab toolbox
-  // double ph = attVec(0);
-  // double th = attVec(1);
-  // double ps = attVec(2);
-  //
-  // double cps = cos(ps);
-  // double sps = sin(ps);
-  // double cth = cos(th);
-  // double sth = sin(th);
-  // double cph = cos(ph);
-  // double sph = sin(ph);
-
-  tf::Matrix3x3 C1(cos(attVec[2]), sin(attVec[2]), 0.0, -sin(attVec[2]), cos(attVec[2]), 0.0, 0.0, 0.0, 1.0);
-  // cps=cos(attVec(2))
-  // sps=sin(attVec(2))
-  // cth=cos(attVec(1))
-  // sth=sin(attVec(1))
-  // cph=cos(attVec(0))
-  // sph=sin(attVec(0))
-
-  tf::Matrix3x3 C2(cos(attVec[1]), 0.0, -sin(attVec[1]), 0.0, 1.0, 0.0, sin(attVec[1]), 0.0, cos(attVec[1]));
-
-  tf::Matrix3x3 C3(1.0, 0.0, 0.0, 0.0, cos(attVec[0]), sin(attVec[0]), 0.0, -sin(attVec[0]), cos(attVec[0]));
-
-  tf::Matrix3x3 DCMnb = C3 * C2 * C1;
-return DCMnb;
-}
-
 Vector3d DekfSensorFusion::_dcm2euler(Matrix3d Cbn)
 {
 
@@ -1458,21 +1336,26 @@ void DekfSensorFusion::publishOdom_()
   nav_msgs::Odometry updatedOdom;
 
   updatedOdom.header.stamp = ros::Time::now();
-  updatedOdom.header.frame_id = "odom";
-  updatedOdom.child_frame_id = "base_footprint";
+  updatedOdom.header.frame_id = "map";
+  // updatedOdom.child_frame_id = odometry_child_frame_id;
 
-  // tf::Vector3 attVec(_x[0],_x[1],_x[2]);
-  // tf::Matrix3x3 Rnb_ = _euler2dcmTF(attVec);
-  // Rbn_=Rnb_.transpose();
   // tf::Quaternion qup;
   // qup.normalize();
   // Rbn_.getRotation(qup);
-
-
+  //
+  // double roll, pitch, yaw;
+  // Rbn_.getRPY(roll, pitch, yaw);
+  // ROS_INFO("RPY in WO %f  %f _x.segment(3,3)
+  // _pos
+  // updatedOdom.pose.pose.position.x = _pos(0);
+  // updatedOdom.pose.pose.position.y = _pos(1);
+  // updatedOdom.pose.pose.position.z = _pos(2);
 
   updatedOdom.pose.pose.position.x = _x[6];
   updatedOdom.pose.pose.position.y = _x[7];
   updatedOdom.pose.pose.position.z = _x[8];
+
+  // _x.segment(3,3)
 
   // updatedOdom.pose.pose.orientation.x = qup.x();
   // updatedOdom.pose.pose.orientation.y = qup.y();
@@ -1480,10 +1363,13 @@ void DekfSensorFusion::publishOdom_()
   // updatedOdom.pose.pose.orientation.w = qup.w();
   // put body_vel
 
-
-  // Matrix3d Cnb = _euler2dcmV(_x[0],_x[1],_x[2]);
-  // _x.segment(3,3) = Cnb.transpose() * _x.segment(3,3);
-
+  // tf::Vector3 v_body_ekf;
+  // tf::Vector3 v_nav_ekf(x_[3], x_[4], x_[5]);
+  // v_body_ekf = Rbn_.transpose() * v_nav_ekf;
+  // _vel
+  // updatedOdom.twist.twist.linear.x = _vel(0);
+  // updatedOdom.twist.twist.linear.y = _vel(1);
+  // updatedOdom.twist.twist.linear.z = _vel(2);
 
   updatedOdom.twist.twist.linear.x = _x[3];
   updatedOdom.twist.twist.linear.y = _x[4];
@@ -1509,28 +1395,7 @@ void DekfSensorFusion::publishOdom_()
   updatedOdom.pose.covariance[14] = _x[13];
   updatedOdom.pose.covariance[15] = _x[14];
 
-  updatedOdom.pose.covariance[16] = _x[0]; //roll
-  updatedOdom.pose.covariance[17] = _x[1]; //pitch
-  updatedOdom.pose.covariance[18] = _x[2]; //yaw
-
-  updatedOdom.pose.covariance[19] = true_position1(3); //roll ,,;
-  updatedOdom.pose.covariance[20] = true_position1(4); //pitch
-  updatedOdom.pose.covariance[21] = true_position1(5); //yaw
   pubOdom_.publish(updatedOdom);
-
-  // geometry_msgs::TransformStamped odom_trans;
-  // odom_trans.header.stamp = updatedOdom.header.stamp;
-  // odom_trans.header.frame_id = updatedOdom.header.frame_id;
-  // odom_trans.child_frame_id = updatedOdom.child_frame_id;
-  // odom_trans.transform.translation.x = updatedOdom.pose.pose.position.x;
-  // odom_trans.transform.translation.y = updatedOdom.pose.pose.position.y;
-  // odom_trans.transform.translation.z = updatedOdom.pose.pose.position.z;
-  // odom_trans.transform.rotation = updatedOdom.pose.pose.orientation;
-  // // odom_trans.transform.rotation.y = updatedOdom.pose.pose.orientation.y;
-  // // odom_trans.transform.rotation.z = updatedOdom.pose.pose.orientation.z;
-  // // odom_trans.transform.rotation.w = updatedOdom.pose.pose.orientation.w;
-  // odom_broadcaster_.sendTransform(odom_trans);
-
 
 }
 void DekfSensorFusion::publishRange_()
