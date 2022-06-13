@@ -1,0 +1,17 @@
+<launch> 
+  <!-- excavator_driving_tools launch file -->
+  <rosparam command="load" file="$(find waypoint_gen)/waypoints.yaml" />
+
+  <group ns="scout_1">
+
+    <param name="/use_sim_time" value="true"/>
+    
+    <node pkg="waypoint_gen"
+          name="waypoint_gen"
+          type="waypoint_gen"
+          output="screen">
+    </node>
+
+  </group>
+
+</launch>

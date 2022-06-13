@@ -9,6 +9,7 @@
     <!-- pcl_obstacle_avoidance launch file -->
     <include file="$(find dekf_sensor_fusion)/launch/dekf.launch"/>
 
+    <!-- <include file="$(find turtlebot3_fake)/launch/tb3_2.launch"/> -->
   </group>
 
 </launch>

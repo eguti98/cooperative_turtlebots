@@ -25,8 +25,8 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
 
   ros::Subscriber sub1 = n.subscribe("/tb3_0/odom", 1000, odometryCallback1);
-  ros::Subscriber sub2 = n.subscribe("tb3_1/odom", 1000, odometryCallback2);
-  ros::Subscriber sub3 = n.subscribe("tb3_2/odom", 1000, odometryCallback3);
+  ros::Subscriber sub2 = n.subscribe("/tb3_1/odom", 1000, odometryCallback2);
+  ros::Subscriber sub3 = n.subscribe("/tb3_2/odom", 1000, odometryCallback3);
 
   ros::spin();
   return 0;

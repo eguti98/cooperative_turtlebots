@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(dekf_sensor_fusion)
 
-find_package(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs geometry_msgs)
+find_package(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs geometry_msgs tf)
 
 add_message_files(
   FILES
