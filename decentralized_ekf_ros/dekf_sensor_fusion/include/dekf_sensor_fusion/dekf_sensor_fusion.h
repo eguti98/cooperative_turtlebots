@@ -17,6 +17,8 @@
 #include "dekf_sensor_fusion/globalCovariance.h"
 #include <std_msgs/Float64.h>
 #include <tf/transform_broadcaster.h>
+#include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/String.h>
 
 using namespace Eigen;
 class DekfSensorFusion
@@ -29,15 +31,20 @@ public:
   void publishRange_();
   // std::string node_name;
   std::string robot_name;
+  std::string robot_id_received;
   Eigen::Matrix <double, 15, 1>  state_received;
   Eigen::Matrix <double, 15, 1>  state_sent;
   Eigen::Matrix <double, 15, 1>  err_state_received;
   Eigen::Matrix <double, 15, 1>  err_state_sent;
+  Eigen::Matrix <double, 9, 1>  true_position0;
   Eigen::Matrix <double, 9, 1>  true_position1;
-  Eigen::Matrix <double, 6, 1>  true_position2;
+  Eigen::Matrix <double, 9, 1>  true_position2;
+  Eigen::Matrix <double, 2, 1>  zupt_command_0;
   Eigen::Matrix <double, 2, 1>  zupt_command_1;
   Eigen::Matrix <double, 2, 1>  zupt_command_2;
-  Eigen::Matrix <double, 15, 1>  range_est;
+  Eigen::Matrix <double, 15, 1>  error_state_updated;
+  Eigen::Matrix <double, 2, 1>  _range;
+  Eigen::Matrix <double, 2, 1>  range_to_drone;
   // Eigen::Matrix <double, 15, 15>  range_cov;
   Eigen::Matrix <double, 15, 1> state1;
   Eigen::Matrix <double, 15, 1> state2;
@@ -54,6 +61,7 @@ public:
   Eigen::Matrix <double, 15, 15> sigma_ij;
   Eigen::Matrix <double, 15, 15> sigma_ji;
   Eigen::Matrix <double, 15, 1> _error_states;
+
   Eigen::Matrix<double, 3, 3> ins_vel_ss;
   typedef Eigen::Matrix<double, 15, 1> Vector15;
   typedef Eigen::Matrix<double, 3, 1> Vector3;
@@ -62,14 +70,15 @@ public:
   Vector3d Pos_old;
 
   bool initializer;
+  bool truths_0;
   bool truths_1;
   bool truths_2;
   bool stop_propation;
   bool relative_update_done;
   bool gps_update_done;
   bool wo_update_done;
-  double _range;
   double res_range;
+  double range_update;
   double error_im;
   Matrix3d eye3=Eigen::Matrix3d::Identity();
   Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);
@@ -78,7 +87,8 @@ public:
   tf::Matrix3x3 Rbn_;
 private:
   ros::NodeHandle &nh_;
-  ros::ServiceClient dekf_sensor_fusion_client;
+  ros::ServiceClient dekf_sensor_fusion_client_1;
+  ros::ServiceClient dekf_sensor_fusion_client_2;
   ros::ServiceServer dekf_sensor_fusion_service;
   bool calculation(dekf_sensor_fusion::SrvCov::Request &req, dekf_sensor_fusion::SrvCov::Response &res);
 //   // ros::Publisher pubOdom_, ...
@@ -90,14 +100,16 @@ private:
   ros::Subscriber sub_Range; //Subscribe to Range data
   ros::Subscriber sub_Altimeter; //Subscribe to Altimeter data
   ros::Subscriber sub_Bearing; //Subscribe to Bearing data
+  ros::Subscriber true_drone0; //Subscribes to truth position from drone0
   ros::Subscriber true_drone1; //Subscribes to truth position from drone1
   ros::Subscriber true_drone2; //Subscribes to truth position from drone2
+  ros::Subscriber vel_command_tb0;  //Subscribes to velocity command from turtlebot 0
   ros::Subscriber vel_command_tb1;  //Subscribes to velocity command from turtlebot 1
   ros::Subscriber vel_command_tb2;  //Subscribes to velocity command from turtlebot 2
 
   ros::Publisher pubOdom_;
   ros::Publisher pubRange_;
-  ros::Publisher pubResidual_;
+  // ros::Publisher pubResidual_;
 
   geometry_msgs::Pose pose_;
   geometry_msgs::Twist bias_;
@@ -105,6 +117,8 @@ private:
   geometry_msgs::Pose err_pose_;
   geometry_msgs::Twist err_bias_;
   geometry_msgs::Point32 err_twist_;
+  std_msgs::String robot_id;
+
   Eigen::Matrix <double, 15, 15> P_;
   Eigen::Matrix <double, 15, 1> _x;
 
@@ -112,7 +126,7 @@ private:
   Eigen::Matrix <double, 15, 15> _P_init;
   Eigen::Matrix <double, 15, 15> gps_UP;
   Eigen::Matrix <double, 15, 15> _Q_ins;
-  Eigen::Matrix <double, 30, 30> _globalP;
+  Eigen::Matrix <double, 45, 45> _globalP;
   Eigen::Matrix <double, 6, 15> H_gps;
   Eigen::Matrix <double, 6, 6> R_gps;
   Eigen::Matrix <double, 1, 1> R_range;
@@ -157,7 +171,7 @@ private:
 
   double h_range;
   double error;
-  double range_to_drone;
+  // double range_to_drone;
 
   double _dt;
   double _t;
@@ -201,8 +215,10 @@ private:
   void gpsCallback(const nav_msgs::Odometry::ConstPtr& msg);       // TODO: Fill this with GPS message type based on what sensor used.
   void woCallback(const nav_msgs::Odometry::ConstPtr& msg);
   // void rangeCallback(const sensor_msgs::Range::ConstPtr &msg);
+  void true_drone0Callback(const nav_msgs::Odometry::ConstPtr& msg);
   void true_drone1Callback(const nav_msgs::Odometry::ConstPtr& msg);
   void true_drone2Callback(const nav_msgs::Odometry::ConstPtr& msg);
+  void vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr& msg);
   void vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr& msg);
   void vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr& msg);
 
@@ -210,7 +226,7 @@ private:
   void bearingCallback();   // TODO: Fill this with GPS message type based on what sensor used
   void publishOdom_();
   // void publishRange_();
-  void publishResidual_();
+  // void publishResidual_();
   void zeroUpdate();
   void nonHolonomicUpdate();
   void calculateProcessNoiseINS();
