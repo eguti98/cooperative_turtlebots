@@ -1,4 +1,4 @@
-loop_rate : 1.0
+loop_rate : 0.5
 odometry_drone_name: "tb3_2"
 # imu_topic_name : "/scout_1/imu"
 # odometry_dr_topic_name : "/lidarTracking/drone_ekf"
