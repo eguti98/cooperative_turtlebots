@@ -54,9 +54,9 @@ bool Turtlebot3Fake::init()
 
   nh_.param("wheel_left_joint_name", joint_states_name_[LEFT],  std::string("wheel_left_joint"));
   nh_.param("wheel_right_joint_name", joint_states_name_[RIGHT],  std::string("wheel_right_joint"));
-  nh_.param("joint_states_frame", joint_states_.header.frame_id, std::string("base_footprint2"));
+  nh_.param("joint_states_frame", joint_states_.header.frame_id, std::string("tb3_0/base_footprint"));
   nh_.param("odom_frame", odom_.header.frame_id, std::string("odom"));
-  nh_.param("base_frame", odom_.child_frame_id, std::string("base_footprint2"));
+  nh_.param("base_frame", odom_.child_frame_id, std::string("base_footprint"));
 
   // initialize variables
   wheel_speed_cmd_[LEFT]  = 0.0;
@@ -163,10 +163,10 @@ bool Turtlebot3Fake::updateOdometry(ros::Duration diff_time)
   odom_pose_[2] += delta_theta;
 
   // compute odometric instantaneouse velocity
-  // odom_vel_[0] = delta_s / diff_time.toSec();     // v
-  odom_vel_[0] = delta_s * cos(odom_pose_[2] + (delta_theta / 2.0)) /diff_time.toSec();
-  // odom_vel_[1] = 0.0;
-  odom_vel_[1] = delta_s * sin(odom_pose_[2] + (delta_theta / 2.0)) /diff_time.toSec();
+  odom_vel_[0] = delta_s / diff_time.toSec();     // v
+  // odom_vel_[0] = delta_s * cos(odom_pose_[2] + (delta_theta / 2.0)) /diff_time.toSec();
+  odom_vel_[1] = 0.0;
+  // odom_vel_[1] = delta_s * sin(odom_pose_[2] + (delta_theta / 2.0)) /diff_time.toSec();
   odom_vel_[2] = delta_theta / diff_time.toSec(); // w
 
   odom_.pose.pose.position.x = odom_pose_[0];

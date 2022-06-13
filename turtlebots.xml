@@ -514,11 +514,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
+                                    <topic>/tb3_0/deadreckoning</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/twist/linear/y</field>
+                                    <field>twist/twist/linear/x</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -527,7 +527,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
+                                    <topic>/tb3_0/deadreckoning</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </y_axis>
                             </axes>
@@ -543,7 +543,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>2</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -551,7 +551,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>ESTIMATED Y</title>
+                            <title>Untitled Curve</title>
                         </curve_2>
                     </curves>
                     <legend>
@@ -681,7 +681,7 @@
                         <curve_2>
                             <axes>
                                 <x_axis>
-                                    <field>header/seq</field>
+                                    <field></field>
                                     <field_type>1</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -690,11 +690,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
+                                    <topic>/tb3_0/deadreckoning</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/twist/linear/x</field>
+                                    <field>twist/twist/linear/y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -703,7 +703,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
+                                    <topic>/tb3_0/deadreckoning</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </y_axis>
                             </axes>
@@ -719,7 +719,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>2</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -727,7 +727,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>ESTIMATED X</title>
+                            <title>Untitled Curve</title>
                         </curve_2>
                     </curves>
                     <legend>

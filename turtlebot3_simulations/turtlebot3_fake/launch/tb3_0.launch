@@ -4,7 +4,7 @@
     <!-- <param name="robot_id" value="1" /> -->
 
     <!-- static transform from odom to map-->
-    <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map drone_odom 0" /> -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 1.5708 odom tb3_0/base_footprint" /> -->
 
     <!-- pcl_obstacle_avoidance launch file -->
     <include file="$(find turtlebot3_fake)/launch/turtlebot3_fake.launch"/>

@@ -129,12 +129,15 @@ void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &m
   double orienty = msg->pose.pose.orientation.y;
   double orientz = msg->pose.pose.orientation.z;
   double orientw = msg->pose.pose.orientation.w;
+  double velx = msg->twist.twist.linear.x;
+  double vely = msg->twist.twist.linear.y; //0
+  double velz = msg->twist.twist.linear.z; //0
   tf::Quaternion q(orientx,orienty,orientz,orientw);
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  true_position1 << x,y,z,roll,pitch,yaw;
+  true_position1 << x,y,z,roll,pitch,yaw,velx,vely,velz;
   truths_1 = 1;
 
 }
@@ -246,7 +249,8 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       Matrix3d Cbn;
       Cbn = CbnMinus * (I + Omega_ib * _dt); // ignore Earth rate and corriolis terms
       _attitude = _dcm2euler(Cbn);
-
+      std::cout << "yaw" <<'\n'<< _attitude(2)<<'\n';
+      std::cout << "yawX" <<'\n'<< _x[2]<<'\n';
       Vector3d V_n_ib;
       V_n_ib=0.5*(Cbn+CbnMinus)*_imu_acce*_dt;
 
@@ -553,14 +557,15 @@ void DekfSensorFusion::woCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
 
       wo_vel[0] = msg->twist.twist.linear.x;
-      wo_vel[1] = msg->twist.twist.linear.y;
-      wo_vel[2] = 0.0;
+      wo_vel[1] = msg->twist.twist.linear.y; //0
+      wo_vel[2] = msg->twist.twist.linear.z; //0
       std::cout << "----------------" << '\n';
       std::cout << "WO VEL"<<'\n' << wo_vel<<'\n';
       wo_vel=Cbn*wo_vel;
       std::cout << "WO VELAfter Transform" <<'\n'<< wo_vel<<'\n';
       std::cout << "VEL" <<'\n'<< _vel<<'\n';
-
+      std::cout << "yaw" <<'\n'<< _attitude(2)<<'\n';
+      std::cout << "yawX" <<'\n'<< _x[2]<<'\n';
       // gps_vel[2] = msg->twist.twist.linear.z;
 
       // z_gps_pos= gps_pos-_pos;
@@ -571,14 +576,17 @@ void DekfSensorFusion::woCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
       z_wo <<  z_wo_vel[0],z_wo_vel[1],wo_vel[2];
       _error_states = _error_states + K_wo * (z_wo  - H_wo* _error_states);
-std::cout << "POS before removal" <<'\n'<< _pos<<'\n';
+// std::cout << "POS before removal" <<'\n'<< _pos<<'\n';
       _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cbn);
       _vel = _vel-_error_states.segment(3,3);
       _pos = _pos-_error_states.segment(6,3);
       // V_old = V_old-_error_states.segment(3,3);
       // Pos_old = Pos_old -_error_states.segment(6,3);
       std::cout << "VEL after removal" <<'\n'<< _vel<<'\n';
-      std::cout << "POS after removal" <<'\n'<< _pos<<'\n';
+      std::cout << "Real VEL" <<'\n'<< true_position1.segment(6,3)<<'\n';
+      std::cout << "yaw after removal" <<'\n'<< _attitude(2)<<'\n';
+      std::cout << "yawX after removal" <<'\n'<< _x[2]<<'\n';
+      // std::cout << "POS after removal" <<'\n'<< _pos<<'\n';
       _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
 
       _P=(Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_wo * H_wo ).transpose() + K_wo * R_wo * K_wo.transpose();
@@ -1094,14 +1102,14 @@ void DekfSensorFusion::publishOdom_()
 
   updatedOdom.header.stamp = ros::Time::now();
   updatedOdom.header.frame_id = "odom";
-  updatedOdom.child_frame_id = "base_link";
+  updatedOdom.child_frame_id = "base_footprint";
 
-  tf::Vector3 attVec(_x[0],_x[1],_x[2]);
-  tf::Matrix3x3 Rnb_ = _euler2dcmTF(attVec);
-  Rbn_=Rnb_.transpose();
-  tf::Quaternion qup;
-  qup.normalize();
-  Rbn_.getRotation(qup);
+  // tf::Vector3 attVec(_x[0],_x[1],_x[2]);
+  // tf::Matrix3x3 Rnb_ = _euler2dcmTF(attVec);
+  // Rbn_=Rnb_.transpose();
+  // tf::Quaternion qup;
+  // qup.normalize();
+  // Rbn_.getRotation(qup);
 
 
 
@@ -1109,15 +1117,15 @@ void DekfSensorFusion::publishOdom_()
   updatedOdom.pose.pose.position.y = _x[7];
   updatedOdom.pose.pose.position.z = _x[8];
 
-  updatedOdom.pose.pose.orientation.x = qup.x();
-  updatedOdom.pose.pose.orientation.y = qup.y();
-  updatedOdom.pose.pose.orientation.z = qup.z();
-  updatedOdom.pose.pose.orientation.w = qup.w();
+  // updatedOdom.pose.pose.orientation.x = qup.x();
+  // updatedOdom.pose.pose.orientation.y = qup.y();
+  // updatedOdom.pose.pose.orientation.z = qup.z();
+  // updatedOdom.pose.pose.orientation.w = qup.w();
   // put body_vel
 
 
-  Matrix3d Cnb = _euler2dcmV(_x[0],_x[1],_x[2]);
-  _x.segment(3,3) = Cnb.transpose() * _x.segment(3,3);
+  // Matrix3d Cnb = _euler2dcmV(_x[0],_x[1],_x[2]);
+  // _x.segment(3,3) = Cnb.transpose() * _x.segment(3,3);
 
 
   updatedOdom.twist.twist.linear.x = _x[3];
@@ -1144,6 +1152,13 @@ void DekfSensorFusion::publishOdom_()
   updatedOdom.pose.covariance[14] = _x[13];
   updatedOdom.pose.covariance[15] = _x[14];
 
+  updatedOdom.pose.covariance[16] = _x[0]; //roll
+  updatedOdom.pose.covariance[17] = _x[1]; //pitch
+  updatedOdom.pose.covariance[18] = _x[2]; //yaw
+
+  updatedOdom.pose.covariance[19] = true_position1(3); //roll ,,;
+  updatedOdom.pose.covariance[20] = true_position1(4); //pitch
+  updatedOdom.pose.covariance[21] = true_position1(5); //yaw
   pubOdom_.publish(updatedOdom);
 
   // geometry_msgs::TransformStamped odom_trans;
@@ -1153,10 +1168,10 @@ void DekfSensorFusion::publishOdom_()
   // odom_trans.transform.translation.x = updatedOdom.pose.pose.position.x;
   // odom_trans.transform.translation.y = updatedOdom.pose.pose.position.y;
   // odom_trans.transform.translation.z = updatedOdom.pose.pose.position.z;
-  // odom_trans.transform.rotation.x = updatedOdom.pose.pose.orientation.x;
-  // odom_trans.transform.rotation.y = updatedOdom.pose.pose.orientation.y;
-  // odom_trans.transform.rotation.z = updatedOdom.pose.pose.orientation.z;
-  // odom_trans.transform.rotation.w = updatedOdom.pose.pose.orientation.w;
+  // odom_trans.transform.rotation = updatedOdom.pose.pose.orientation;
+  // // odom_trans.transform.rotation.y = updatedOdom.pose.pose.orientation.y;
+  // // odom_trans.transform.rotation.z = updatedOdom.pose.pose.orientation.z;
+  // // odom_trans.transform.rotation.w = updatedOdom.pose.pose.orientation.w;
   // odom_broadcaster_.sendTransform(odom_trans);
 
 

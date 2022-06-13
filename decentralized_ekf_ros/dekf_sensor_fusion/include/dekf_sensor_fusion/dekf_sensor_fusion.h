@@ -33,7 +33,7 @@ public:
   Eigen::Matrix <double, 15, 1>  state_sent;
   Eigen::Matrix <double, 15, 1>  err_state_received;
   Eigen::Matrix <double, 15, 1>  err_state_sent;
-  Eigen::Matrix <double, 6, 1>  true_position1;
+  Eigen::Matrix <double, 9, 1>  true_position1;
   Eigen::Matrix <double, 6, 1>  true_position2;
   Eigen::Matrix <double, 2, 1>  zupt_command_1;
   Eigen::Matrix <double, 2, 1>  zupt_command_2;
