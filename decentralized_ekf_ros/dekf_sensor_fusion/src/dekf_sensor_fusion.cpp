@@ -128,7 +128,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   true_drone0 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone0Callback, this);
   true_drone1 = nh.subscribe("/tb3_1/truth", 1, &DekfSensorFusion::true_drone1Callback, this);
   true_drone2 = nh.subscribe("/tb3_2/truth", 1, &DekfSensorFusion::true_drone2Callback, this);
-  
+
   vel_command_tb0 = nh.subscribe("/tb3_0/cmd_vel", 1, &DekfSensorFusion::vel_command_tb0Callback, this);
   vel_command_tb1 = nh.subscribe("/tb3_1/cmd_vel", 1, &DekfSensorFusion::vel_command_tb1Callback, this);
   vel_command_tb2 = nh.subscribe("/tb3_2/cmd_vel", 1, &DekfSensorFusion::vel_command_tb2Callback, this);
@@ -266,7 +266,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -275,7 +275,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -289,7 +289,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     publishOdom_();
   }
   // else {return;}
-}
+
 // GPS Update
 //
 void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
@@ -372,13 +372,13 @@ void DekfSensorFusion::woCallback(const nav_msgs::Odometry::ConstPtr &msg)
       wo_vel[0] = msg->twist.twist.linear.x;
       wo_vel[1] = msg->twist.twist.linear.y; //0
       wo_vel[2] = msg->twist.twist.linear.z; //0
-      std::cout << "----------------" << '\n';
-      std::cout << "WO VEL"<<'\n' << wo_vel<<'\n';
-      wo_vel=Cbn*wo_vel;
-      std::cout << "WO VELAfter Transform" <<'\n'<< wo_vel<<'\n';
-      std::cout << "VEL" <<'\n'<< _vel<<'\n';
-      std::cout << "yaw" <<'\n'<< _attitude(2)<<'\n';
-      std::cout << "yawX" <<'\n'<< _x[2]<<'\n';
+      // std::cout << "----------------" << '\n';
+      // std::cout << "WO VEL"<<'\n' << wo_vel<<'\n';
+      // wo_vel=Cbn*wo_vel;
+      // std::cout << "WO VELAfter Transform" <<'\n'<< wo_vel<<'\n';
+      // std::cout << "VEL" <<'\n'<< _vel<<'\n';
+      // std::cout << "yaw" <<'\n'<< _attitude(2)<<'\n';
+      // std::cout << "yawX" <<'\n'<< _x[2]<<'\n';
       // gps_vel[2] = msg->twist.twist.linear.z;
 
       // z_gps_pos= gps_pos-_pos;
@@ -395,10 +395,10 @@ void DekfSensorFusion::woCallback(const nav_msgs::Odometry::ConstPtr &msg)
       _pos = _pos-_error_states.segment(6,3);
       // V_old = V_old-_error_states.segment(3,3);
       // Pos_old = Pos_old -_error_states.segment(6,3);
-      std::cout << "VEL after removal" <<'\n'<< _vel<<'\n';
-      std::cout << "Real VEL" <<'\n'<< true_position1.segment(6,3)<<'\n';
-      std::cout << "yaw after removal" <<'\n'<< _attitude(2)<<'\n';
-      std::cout << "yawX after removal" <<'\n'<< _x[2]<<'\n';
+      // std::cout << "VEL after removal" <<'\n'<< _vel<<'\n';
+      // std::cout << "Real VEL" <<'\n'<< true_position1.segment(6,3)<<'\n';
+      // std::cout << "yaw after removal" <<'\n'<< _attitude(2)<<'\n';
+      // std::cout << "yawX after removal" <<'\n'<< _x[2]<<'\n';
       // std::cout << "POS after removal" <<'\n'<< _pos<<'\n';
       _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
 
@@ -1114,7 +1114,7 @@ void DekfSensorFusion::true_drone1Callback(const nav_msgs::Odometry::ConstPtr &m
 
   true_position1 << x,y,z,roll,pitch,yaw,velx,vely,velz;
   truths_1 = 1;
- 
+
 
 }
 void DekfSensorFusion::true_drone2Callback(const nav_msgs::Odometry::ConstPtr &msg)
