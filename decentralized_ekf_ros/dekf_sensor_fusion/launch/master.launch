@@ -6,6 +6,5 @@
 
   <include file="$(find dekf_sensor_fusion)/launch/tb3_1.launch"/>
 
-  <include file="$(find dekf_sensor_fusion)/launch/tb3_2.launch"/>
 
 </launch>
