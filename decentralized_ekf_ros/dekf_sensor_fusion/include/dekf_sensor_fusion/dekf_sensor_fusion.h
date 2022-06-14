@@ -199,7 +199,7 @@ private:
   void imuCallback(const sensor_msgs::Imu::ConstPtr &msg);
   void voCallback(const nav_msgs::Odometry::ConstPtr &msg);
   void gpsCallback(const nav_msgs::Odometry::ConstPtr& msg);       // TODO: Fill this with GPS message type based on what sensor used.
-  void woCallback(const nav_msgs::Odometry::ConstPtr& msg);
+  // void woCallback(const nav_msgs::Odometry::ConstPtr& msg);
   // void rangeCallback(const sensor_msgs::Range::ConstPtr &msg);
   void true_drone1Callback(const nav_msgs::Odometry::ConstPtr& msg);
   void true_drone2Callback(const nav_msgs::Odometry::ConstPtr& msg);
@@ -211,7 +211,8 @@ private:
   void publishOdom_();
   // void publishRange_();
   void publishResidual_();
-  void zeroUpdate();
+  void zeroVelUpdate();
+  void zeroAngRateUpdate();
   void nonHolonomicUpdate();
   void calculateProcessNoiseINS();
   void calculateProcessNoiseINSzupt();
