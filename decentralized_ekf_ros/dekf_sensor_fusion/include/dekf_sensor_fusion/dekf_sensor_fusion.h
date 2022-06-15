@@ -18,6 +18,7 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/String.h>
+#include <tf/transform_broadcaster.h>
 
 using namespace Eigen;
 class DekfSensorFusion
@@ -80,6 +81,7 @@ public:
   Matrix3d eye3=Eigen::Matrix3d::Identity();
   Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);
   // ros::ServiceClient dekf_sensor_fusion_client;
+  tf::TransformBroadcaster odom_broadcaster_;
 private:
   ros::NodeHandle &nh_;
   ros::ServiceClient dekf_sensor_fusion_client_1;
