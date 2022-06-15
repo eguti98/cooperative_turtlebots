@@ -1434,16 +1434,16 @@ void DekfSensorFusion::publishOdom_()
 void DekfSensorFusion::publishRange_()
 {
   if (robot_name=="tb3_0") {
-    _range(0) = sqrt(pow(true_position0(0)-true_position1(0),2)+pow(true_position0(1)-true_position1(1),2)+pow(true_position0(2)-true_position1(2),2));
-    _range(1) = sqrt(pow(true_position0(0)-true_position2(0),2)+pow(true_position0(1)-true_position2(1),2)+pow(true_position0(2)-true_position2(2),2));
+    _range(0) = sqrt(pow(true_position0(0)-true_position1(0),2)+pow(true_position0(1)-true_position1(1),2)+pow(true_position0(2)-true_position1(2),2)) + (double(rand()) / (double(RAND_MAX) + 1.0))*0.05 - 0.025; // White noise (2.5cm);
+    _range(1) = sqrt(pow(true_position0(0)-true_position2(0),2)+pow(true_position0(1)-true_position2(1),2)+pow(true_position0(2)-true_position2(2),2)) + (double(rand()) / (double(RAND_MAX) + 1.0))*0.05 - 0.025; // White noise (2.5cm)
   }
   else if (robot_name=="tb3_1") {
-    _range(0) = sqrt(pow(true_position1(0)-true_position0(0),2)+pow(true_position1(1)-true_position0(1),2)+pow(true_position1(2)-true_position0(2),2));
-    _range(1) = sqrt(pow(true_position1(0)-true_position2(0),2)+pow(true_position1(1)-true_position2(1),2)+pow(true_position1(2)-true_position2(2),2));
+    _range(0) = sqrt(pow(true_position1(0)-true_position0(0),2)+pow(true_position1(1)-true_position0(1),2)+pow(true_position1(2)-true_position0(2),2)) + (double(rand()) / (double(RAND_MAX) + 1.0))*0.05 - 0.025; // White noise (2.5cm)
+    _range(1) = sqrt(pow(true_position1(0)-true_position2(0),2)+pow(true_position1(1)-true_position2(1),2)+pow(true_position1(2)-true_position2(2),2)) + (double(rand()) / (double(RAND_MAX) + 1.0))*0.05 - 0.025; // White noise (2.5cm)
   }
   else if (robot_name=="tb3_2") {
-    _range(0) = sqrt(pow(true_position2(0)-true_position0(0),2)+pow(true_position2(1)-true_position0(1),2)+pow(true_position2(2)-true_position0(2),2));
-    _range(1) = sqrt(pow(true_position2(0)-true_position1(0),2)+pow(true_position2(1)-true_position1(1),2)+pow(true_position2(2)-true_position1(2),2));
+    _range(0) = sqrt(pow(true_position2(0)-true_position0(0),2)+pow(true_position2(1)-true_position0(1),2)+pow(true_position2(2)-true_position0(2),2)) + (double(rand()) / (double(RAND_MAX) + 1.0))*0.05 - 0.025; // White noise (2.5cm)
+    _range(1) = sqrt(pow(true_position2(0)-true_position1(0),2)+pow(true_position2(1)-true_position1(1),2)+pow(true_position2(2)-true_position1(2),2)) + (double(rand()) / (double(RAND_MAX) + 1.0))*0.05 - 0.025; // White noise (2.5cm)
   }
 
   std::vector<double> _rangeV(2);
