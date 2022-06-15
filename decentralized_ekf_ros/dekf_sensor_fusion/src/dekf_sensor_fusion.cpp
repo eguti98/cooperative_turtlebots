@@ -315,12 +315,12 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
       Matrix3d Cbn = Cnb.transpose();
       MatrixXd K_gps(15,6);
 
-      gps_pos[0] = msg->pose.pose.position.x;
-      gps_pos[1] = msg->pose.pose.position.y;
+      gps_pos[0] = msg->pose.pose.position.x + (double(rand()) / (double(RAND_MAX) + 1.0))*0.1 - 0.05; // White noise (5cm)
+      gps_pos[1] = msg->pose.pose.position.y + (double(rand()) / (double(RAND_MAX) + 1.0))*0.1 - 0.05; // White noise (5cm)
       gps_pos[2] = msg->pose.pose.position.z;
 
-      gps_vel[0] = msg->twist.twist.linear.x;
-      gps_vel[1] = msg->twist.twist.linear.y;
+      gps_vel[0] = msg->twist.twist.linear.x + (double(rand()) / (double(RAND_MAX) + 1.0))*0.02 - 0.01; // White noise (1cm/s)
+      gps_vel[1] = msg->twist.twist.linear.y + (double(rand()) / (double(RAND_MAX) + 1.0))*0.02 - 0.01; // White noise (1cm/s)
       gps_vel[2] = msg->twist.twist.linear.z;
 
       z_gps_pos= gps_pos-_pos;
