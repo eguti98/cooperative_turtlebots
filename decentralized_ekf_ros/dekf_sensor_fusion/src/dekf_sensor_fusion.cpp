@@ -284,58 +284,91 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
 
   if (initializer == 1) {
-    Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
-    Matrix3d Cbn = Cnb.transpose();
-    MatrixXd K_gps(15,6);
 
-    gps_pos[0] = msg->pose.pose.position.x;
-    gps_pos[1] = msg->pose.pose.position.y;
-    gps_pos[2] = msg->pose.pose.position.z;
+    // Degraded GPS
 
-    gps_vel[0] = msg->twist.twist.linear.x;
-    gps_vel[1] = msg->twist.twist.linear.y;
-    gps_vel[2] = msg->twist.twist.linear.z;
-
-    z_gps_pos= gps_pos-_pos;
-    z_gps_vel= gps_vel-_vel;
-    // z_gps_pos= gps_pos-Pos_old;
-    // z_gps_vel= gps_vel-V_old;
-    K_gps = _P * H_gps.transpose() * (H_gps * _P * H_gps.transpose() + R_gps).inverse();
-
-    z_gps <<  z_gps_vel[0],z_gps_vel[1],z_gps_vel[2],z_gps_pos[0],z_gps_pos[1],z_gps_pos[2];
-    _error_states = _error_states + K_gps * (z_gps  - H_gps * _error_states);
-
-    _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cbn);
-    _vel = _vel-_error_states.segment(3,3);
-    _pos = _pos-_error_states.segment(6,3);
-    // V_old = V_old-_error_states.segment(3,3);
-    // Pos_old = Pos_old -_error_states.segment(6,3);
-
-    _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
-
-    _P=(Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
-
-
-    if (robot_name=="tb3_0") {
-      _globalP.block<15,15>(0,0) = _P;
-      _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
-      _globalP.block<15,15>(0,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+    if (robot_name=="tb3_0")
+    {
+      degradation = 1-(sqrt(pow(true_position0(0)-(-10),2)+pow(true_position0(1)-(-10),2)))/20;
     }
-    else if (robot_name=="tb3_1") {
-      _globalP.block<15,15>(15,15) = _P;
-      _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
-      _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+    else if (robot_name=="tb3_1")
+    {
+      degradation = 1-(sqrt(pow(true_position1(0)-(-10),2)+pow(true_position1(1)-(-10),2)))/20;
     }
-    else if (robot_name=="tb3_2") {
-      _globalP.block<15,15>(30,30) = _P;
-      _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
-      _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+    else if (robot_name=="tb3_2")
+    {
+      degradation = 1-(sqrt(pow(true_position2(0)-(-10),2)+pow(true_position2(1)-(-10),2)))/20;
     }
-    gps_update_done = 1;
 
-    // publishOdom_();
-    // publishRange_();
-    // publishResidual_();
+    if (degradation < 0) {
+      degradation =0.0000;
+    }
+
+    random_gps =  double(rand()) / (double(RAND_MAX) + 1.0);
+
+    // std::cout << "degradation: "<< degradation << '\n';
+    // std::cout << "random: "<< random_gps << '\n';
+
+    if (random_gps < degradation)
+    {
+      Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
+      Matrix3d Cbn = Cnb.transpose();
+      MatrixXd K_gps(15,6);
+
+      gps_pos[0] = msg->pose.pose.position.x;
+      gps_pos[1] = msg->pose.pose.position.y;
+      gps_pos[2] = msg->pose.pose.position.z;
+
+      gps_vel[0] = msg->twist.twist.linear.x;
+      gps_vel[1] = msg->twist.twist.linear.y;
+      gps_vel[2] = msg->twist.twist.linear.z;
+
+      z_gps_pos= gps_pos-_pos;
+      z_gps_vel= gps_vel-_vel;
+      // z_gps_pos= gps_pos-Pos_old;
+      // z_gps_vel= gps_vel-V_old;
+      K_gps = _P * H_gps.transpose() * (H_gps * _P * H_gps.transpose() + R_gps).inverse();
+
+      z_gps <<  z_gps_vel[0],z_gps_vel[1],z_gps_vel[2],z_gps_pos[0],z_gps_pos[1],z_gps_pos[2];
+      _error_states = _error_states + K_gps * (z_gps  - H_gps * _error_states);
+
+      _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)- _skewsym(_error_states.segment(0,3)))*Cbn);
+      _vel = _vel-_error_states.segment(3,3);
+      _pos = _pos-_error_states.segment(6,3);
+      // V_old = V_old-_error_states.segment(3,3);
+      // Pos_old = Pos_old -_error_states.segment(6,3);
+
+      _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
+
+      _P=(Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+
+
+      if (robot_name=="tb3_0") {
+        _globalP.block<15,15>(0,0) = _P;
+        _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        _globalP.block<15,15>(0,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+      }
+      else if (robot_name=="tb3_1") {
+        _globalP.block<15,15>(15,15) = _P;
+        _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+      }
+      else if (robot_name=="tb3_2") {
+        _globalP.block<15,15>(30,30) = _P;
+        _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+      }
+      gps_update_done = 1;
+
+      // publishOdom_();
+      // publishRange_();
+      // publishResidual_();
+      ROS_WARN("GPS update");
+    }
+    else
+    {
+      ROS_ERROR("GPS not available");
+    }
   }
 }
 //

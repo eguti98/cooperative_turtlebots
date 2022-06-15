@@ -76,6 +76,7 @@ public:
   double res_range;
   double range_update;
   double error_im;
+
   Matrix3d eye3=Eigen::Matrix3d::Identity();
   Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);
   // ros::ServiceClient dekf_sensor_fusion_client;
@@ -166,6 +167,9 @@ private:
   double h_range;
   double error;
   // double range_to_drone;
+
+  double degradation;
+  double random_gps;
 
   double _dt;
   double _t;
