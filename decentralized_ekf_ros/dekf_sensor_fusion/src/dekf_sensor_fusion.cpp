@@ -153,8 +153,8 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       double az= msg->linear_acceleration.z + 9.81-ba(2);
       // // f_ib= ax,ay,az
 
-      _imu_gyro << p, q, r;
-      _imu_acce << ax,ay,az;
+      _imu_gyro << p, -q, -r;
+      _imu_acce << ax,-ay,-az;
 
       Matrix3d Omega_ib;
       Omega_ib << 0, -r, q, r, 0, -p, -q, p, 0;
@@ -173,7 +173,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       V_n_ib=0.5*(Cbn+CbnMinus)*_imu_acce*_dt;
 
       Vector3d grav_;
-      grav_ << 0,0,-9.81;
+      grav_ << 0,0,9.81;
       V_old=_vel+V_n_ib+(grav_)*_dt;
 
       Pos_old=_pos+(V_old+_vel)*_dt/2.0;
@@ -1367,68 +1367,170 @@ void DekfSensorFusion::calculateProcessNoiseINS()
 void DekfSensorFusion::publishOdom_()
 {
   nav_msgs::Odometry updatedOdom;
+    geometry_msgs::TransformStamped odom_trans;
+
+
+    updatedOdom.header.stamp = ros::Time::now();
+    updatedOdom.header.frame_id = "odom";
+    updatedOdom.child_frame_id = "base_footprint";
+
+    // tf::Vector3 attVec(_x[0],_x[1],_x[2]);
+    // tf::Matrix3x3 Rnb_ = _euler2dcmTF(attVec);
+    // Rbn_=Rnb_.transpose();
+    // tf::Quaternion qup;
+    // qup.normalize();
+    // Rbn_.getRotation(qup);
+
+    Vector3d eulVec;
+    eulVec << _x(0), -_x(1), -_x(2);
+    Matrix3d DCMnb;
+    DCMnb = _euler2dcm(eulVec);
+    Vector4d qua;
+    qua = _dcm2qua(DCMnb.transpose());
+    qua = qua / qua.norm();
+    odom_trans.header.stamp = ros::Time::now();
+    odom_trans.header.frame_id = "odom";
+  odom_trans.child_frame_id = "base_footprint";
+  odom_trans.transform.translation.x = _x(6);
+  odom_trans.transform.translation.y = -_x(7);
+  odom_trans.transform.translation.z = -_x(8);
+  odom_trans.transform.rotation.x = qua(0);
+  odom_trans.transform.rotation.y = qua(1);
+  odom_trans.transform.rotation.z = qua(2);
+  odom_trans.transform.rotation.w = qua(3);
+  odom_broadcaster_.sendTransform(odom_trans);
+
 
   updatedOdom.header.stamp = ros::Time::now();
-  updatedOdom.header.frame_id = "map";
-  // updatedOdom.child_frame_id = odometry_child_frame_id;
+    updatedOdom.header.frame_id = "odom";
+    updatedOdom.child_frame_id = "base_footprint";
 
-  // tf::Quaternion qup;
-  // qup.normalize();
-  // Rbn_.getRotation(qup);
+    updatedOdom.pose.pose.orientation.w = qua(0);
+    updatedOdom.pose.pose.orientation.x = qua(1);
+    updatedOdom.pose.pose.orientation.y = qua(2);
+    updatedOdom.pose.pose.orientation.z = qua(3);
+
+    updatedOdom.twist.twist.linear.x = _x(3);
+    updatedOdom.twist.twist.linear.y = -_x(4);
+    updatedOdom.twist.twist.linear.z = -_x(5);
+
+    updatedOdom.pose.pose.position.x = _x(6);
+    updatedOdom.pose.pose.position.y = -_x(7);
+    updatedOdom.pose.pose.position.z = -_x(8);
+
+
+    // updatedOdom.pose.pose.position.x = _x[6];
+    // updatedOdom.pose.pose.position.y = _x[7];
+    // updatedOdom.pose.pose.position.z = _x[8];
+
+    // updatedOdom.pose.pose.orientation.x = qup.x();
+    // updatedOdom.pose.pose.orientation.y = qup.y();
+    // updatedOdom.pose.pose.orientation.z = qup.z();
+    // updatedOdom.pose.pose.orientation.w = qup.w();
+    // put body_vel
+
+
+    // Matrix3d Cnb = _euler2dcmV(_x[0],_x[1],_x[2]);
+    // _x.segment(3,3) = Cnb.transpose() * _x.segment(3,3);
+
+
+    // updatedOdom.twist.twist.linear.x = _x[3];
+    // updatedOdom.twist.twist.linear.y = _x[4];
+    // updatedOdom.twist.twist.linear.z = _x[5];
+
+    updatedOdom.pose.covariance[0] = _x[6]+3*sqrt(_P(6, 6));
+    updatedOdom.pose.covariance[1] = _x[6]-3*sqrt(_P(6, 6));
+    updatedOdom.pose.covariance[2] = _x[7]+3*sqrt(_P(7, 7));
+    updatedOdom.pose.covariance[3] = _x[7]-3*sqrt(_P(7, 7));
+
+    updatedOdom.pose.covariance[4] = _x[6]-true_position1(0);
+    updatedOdom.pose.covariance[5] = _x[7]-true_position1(1);
+    updatedOdom.pose.covariance[6] = _x[8]-true_position1(2);
+
+    updatedOdom.pose.covariance[7] = _x[6]-true_position2(0);
+    updatedOdom.pose.covariance[8] = _x[7]-true_position2(1);
+    updatedOdom.pose.covariance[9] = _x[8]-true_position2(2);
+
+    updatedOdom.pose.covariance[10] = _x[9];
+    updatedOdom.pose.covariance[11] = _x[10];
+    updatedOdom.pose.covariance[12] = _x[11];
+    updatedOdom.pose.covariance[13] = _x[12];
+    updatedOdom.pose.covariance[14] = _x[13];
+    updatedOdom.pose.covariance[15] = _x[14];
+
+    updatedOdom.pose.covariance[16] = _x[0]; //roll
+    updatedOdom.pose.covariance[17] = _x[1]; //pitch
+    updatedOdom.pose.covariance[18] = _x[2]; //yaw
+
+    updatedOdom.pose.covariance[19] = true_position1(3); //roll ,,;
+    updatedOdom.pose.covariance[20] = true_position1(4); //pitch
+    updatedOdom.pose.covariance[21] = true_position1(5); //yaw
+    pubOdom_.publish(updatedOdom);
+
+
+  // nav_msgs::Odometry updatedOdom;
   //
-  // double roll, pitch, yaw;
-  // Rbn_.getRPY(roll, pitch, yaw);
-  // ROS_INFO("RPY in WO %f  %f _x.segment(3,3)
-  // _pos
-  // updatedOdom.pose.pose.position.x = _pos(0);
-  // updatedOdom.pose.pose.position.y = _pos(1);
-  // updatedOdom.pose.pose.position.z = _pos(2);
-
-  updatedOdom.pose.pose.position.x = _x[6];
-  updatedOdom.pose.pose.position.y = _x[7];
-  updatedOdom.pose.pose.position.z = _x[8];
-
-  // _x.segment(3,3)
-
-  // updatedOdom.pose.pose.orientation.x = qup.x();
-  // updatedOdom.pose.pose.orientation.y = qup.y();
-  // updatedOdom.pose.pose.orientation.z = qup.z();
-  // updatedOdom.pose.pose.orientation.w = qup.w();
-  // put body_vel
-
-  // tf::Vector3 v_body_ekf;
-  // tf::Vector3 v_nav_ekf(x_[3], x_[4], x_[5]);
-  // v_body_ekf = Rbn_.transpose() * v_nav_ekf;
-  // _vel
-  // updatedOdom.twist.twist.linear.x = _vel(0);
-  // updatedOdom.twist.twist.linear.y = _vel(1);
-  // updatedOdom.twist.twist.linear.z = _vel(2);
-
-  updatedOdom.twist.twist.linear.x = _x[3];
-  updatedOdom.twist.twist.linear.y = _x[4];
-  updatedOdom.twist.twist.linear.z = _x[5];
-
-  updatedOdom.pose.covariance[0] = _x[6]+3*sqrt(_P(6, 6));
-  updatedOdom.pose.covariance[1] = _x[6]-3*sqrt(_P(6, 6));
-  updatedOdom.pose.covariance[2] = _x[7]+3*sqrt(_P(7, 7));
-  updatedOdom.pose.covariance[3] = _x[7]-3*sqrt(_P(7, 7));
-
-  updatedOdom.pose.covariance[4] = _x[6]-true_position1(0);
-  updatedOdom.pose.covariance[5] = _x[7]-true_position1(1);
-  updatedOdom.pose.covariance[6] = _x[8]-true_position1(2);
-
-  updatedOdom.pose.covariance[7] = _x[6]-true_position2(0);
-  updatedOdom.pose.covariance[8] = _x[7]-true_position2(1);
-  updatedOdom.pose.covariance[9] = _x[8]-true_position2(2);
-
-  updatedOdom.pose.covariance[10] = _x[9];
-  updatedOdom.pose.covariance[11] = _x[10];
-  updatedOdom.pose.covariance[12] = _x[11];
-  updatedOdom.pose.covariance[13] = _x[12];
-  updatedOdom.pose.covariance[14] = _x[13];
-  updatedOdom.pose.covariance[15] = _x[14];
-
-  pubOdom_.publish(updatedOdom);
+  // updatedOdom.header.stamp = ros::Time::now();
+  // updatedOdom.header.frame_id = "map";
+  // // updatedOdom.child_frame_id = odometry_child_frame_id;
+  //
+  // // tf::Quaternion qup;
+  // // qup.normalize();
+  // // Rbn_.getRotation(qup);
+  // //
+  // // double roll, pitch, yaw;
+  // // Rbn_.getRPY(roll, pitch, yaw);
+  // // ROS_INFO("RPY in WO %f  %f _x.segment(3,3)
+  // // _pos
+  // // updatedOdom.pose.pose.position.x = _pos(0);
+  // // updatedOdom.pose.pose.position.y = _pos(1);
+  // // updatedOdom.pose.pose.position.z = _pos(2);
+  //
+  // updatedOdom.pose.pose.position.x = _x[6];
+  // updatedOdom.pose.pose.position.y = _x[7];
+  // updatedOdom.pose.pose.position.z = _x[8];
+  //
+  // // _x.segment(3,3)
+  //
+  // // updatedOdom.pose.pose.orientation.x = qup.x();
+  // // updatedOdom.pose.pose.orientation.y = qup.y();
+  // // updatedOdom.pose.pose.orientation.z = qup.z();
+  // // updatedOdom.pose.pose.orientation.w = qup.w();
+  // // put body_vel
+  //
+  // // tf::Vector3 v_body_ekf;
+  // // tf::Vector3 v_nav_ekf(x_[3], x_[4], x_[5]);
+  // // v_body_ekf = Rbn_.transpose() * v_nav_ekf;
+  // // _vel
+  // // updatedOdom.twist.twist.linear.x = _vel(0);
+  // // updatedOdom.twist.twist.linear.y = _vel(1);
+  // // updatedOdom.twist.twist.linear.z = _vel(2);
+  //
+  // updatedOdom.twist.twist.linear.x = _x[3];
+  // updatedOdom.twist.twist.linear.y = _x[4];
+  // updatedOdom.twist.twist.linear.z = _x[5];
+  //
+  // updatedOdom.pose.covariance[0] = _x[6]+3*sqrt(_P(6, 6));
+  // updatedOdom.pose.covariance[1] = _x[6]-3*sqrt(_P(6, 6));
+  // updatedOdom.pose.covariance[2] = _x[7]+3*sqrt(_P(7, 7));
+  // updatedOdom.pose.covariance[3] = _x[7]-3*sqrt(_P(7, 7));
+  //
+  // updatedOdom.pose.covariance[4] = _x[6]-true_position1(0);
+  // updatedOdom.pose.covariance[5] = _x[7]-true_position1(1);
+  // updatedOdom.pose.covariance[6] = _x[8]-true_position1(2);
+  //
+  // updatedOdom.pose.covariance[7] = _x[6]-true_position2(0);
+  // updatedOdom.pose.covariance[8] = _x[7]-true_position2(1);
+  // updatedOdom.pose.covariance[9] = _x[8]-true_position2(2);
+  //
+  // updatedOdom.pose.covariance[10] = _x[9];
+  // updatedOdom.pose.covariance[11] = _x[10];
+  // updatedOdom.pose.covariance[12] = _x[11];
+  // updatedOdom.pose.covariance[13] = _x[12];
+  // updatedOdom.pose.covariance[14] = _x[13];
+  // updatedOdom.pose.covariance[15] = _x[14];
+  //
+  // pubOdom_.publish(updatedOdom);
 
 }
 void DekfSensorFusion::publishRange_()
