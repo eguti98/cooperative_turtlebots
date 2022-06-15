@@ -654,7 +654,7 @@
                             <axes>
                                 <x_axis>
                                     <field>pose/pose/position/x</field>
-                                    <field_type>1</field_type>
+                                    <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
                                         <absolute_minimum>0</absolute_minimum>
@@ -666,7 +666,7 @@
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>pose/pose/position/z</field>
+                                    <field>pose/pose/position/y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -699,13 +699,13 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>TRUTH Z</title>
+                            <title>TRUTH GROUND</title>
                         </curve_0>
                         <curve_1>
                             <axes>
                                 <x_axis>
                                     <field>pose/pose/position/x</field>
-                                    <field_type>1</field_type>
+                                    <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
                                         <absolute_minimum>0</absolute_minimum>
@@ -717,7 +717,7 @@
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>pose/pose/position/z</field>
+                                    <field>pose/pose/position/y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -750,7 +750,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>ESTIMATED Z</title>
+                            <title>ESTIMATED GROUND</title>
                         </curve_1>
                     </curves>
                     <legend>
@@ -1030,8 +1030,8 @@
                         <curve_0>
                             <axes>
                                 <x_axis>
-                                    <field>pose/pose/position/z</field>
-                                    <field_type>1</field_type>
+                                    <field>pose/pose/position/x</field>
+                                    <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
                                         <absolute_minimum>0</absolute_minimum>
@@ -1043,7 +1043,7 @@
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>pose/pose/position/z</field>
+                                    <field>pose/pose/position/y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -1076,13 +1076,13 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>TRUTH Z</title>
+                            <title>TRUTH GROUND</title>
                         </curve_0>
                         <curve_1>
                             <axes>
                                 <x_axis>
-                                    <field>pose/pose/position/z</field>
-                                    <field_type>1</field_type>
+                                    <field>pose/pose/position/x</field>
+                                    <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
                                         <absolute_minimum>0</absolute_minimum>
@@ -1094,7 +1094,7 @@
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>pose/pose/position/z</field>
+                                    <field>pose/pose/position/y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -1127,7 +1127,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>ESTIMATED Z</title>
+                            <title>ESTIMATED GROUND</title>
                         </curve_1>
                     </curves>
                     <legend>
