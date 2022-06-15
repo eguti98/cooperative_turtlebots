@@ -206,7 +206,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -215,7 +215,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -224,7 +224,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -591,7 +591,7 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
@@ -630,7 +630,7 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,15) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,15);
@@ -673,7 +673,7 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
 
@@ -711,7 +711,7 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
-        _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(15,0) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,0);
@@ -754,7 +754,7 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
 
@@ -791,7 +791,7 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
 
