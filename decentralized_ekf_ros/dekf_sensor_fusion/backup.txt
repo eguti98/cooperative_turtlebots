@@ -77,7 +77,6 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   relative_update_done = 0;
   gps_update_done = 0;
   wo_update_done = 0;
-  propagation_is_done=0;
   // stop_propation = 0;
   _range= 100; //TODO if the range is not given it starts with '0'
 
@@ -302,6 +301,15 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       // END - CALCULATE Q
       _P = STM * _P * STM.transpose() + _Q_ins; // Covariance Matrix
 
+
+// #define WHEEL_RADIUS                    0.033     // meter
+// wheel_seperation_ = 0.287;
+// turning_radius_   = 0.1435;
+// robot_radius_     = 0.220;
+
+        // _attitude=Att_old;
+
+
       //Update Global P
       if (robot_name=="tb3_0") {
         _globalP.block<15,15>(0,0) = _P;
@@ -357,11 +365,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // }
     _vel=V_old;
     _pos=Pos_old;
-
-
     publishOdom_();
-
-    propagation_is_done=1;
   }
   // else {return;}
 }
@@ -540,7 +544,7 @@ void DekfSensorFusion::calculateProcessNoiseINSzupt(){
 // GPS Update
 void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
-  if (initializer == 1 && propagation_is_done==1) {
+  if (initializer == 1) {
     Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
     Matrix3d Cbn = Cnb.transpose();
     MatrixXd K_gps(15,6);
@@ -552,8 +556,6 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     gps_vel[0] = msg->twist.twist.linear.x;
     gps_vel[1] = -msg->twist.twist.linear.y;
     gps_vel[2] = -msg->twist.twist.linear.z;
-
-    // gps_vel=Cbn*gps_vel;
 
     z_gps_pos= gps_pos-_pos;
     z_gps_vel= gps_vel-_vel;
@@ -570,7 +572,7 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     // V_old = V_old-_error_states.segment(3,3);
     // Pos_old = Pos_old -_error_states.segment(6,3);
 
-    _error_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
+    _error_states.segment(0,15)<<Eigen::VectorXd::Zero(15);
 
     _P=(Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
 
@@ -588,7 +590,6 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
     // publishOdom_();
     // publishRange_();
     // publishResidual_();
-    propagation_is_done=0;
   }
 }
 

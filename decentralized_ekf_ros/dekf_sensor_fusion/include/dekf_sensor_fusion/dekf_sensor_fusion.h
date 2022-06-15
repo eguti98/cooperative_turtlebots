@@ -60,6 +60,7 @@ public:
   DekfSensorFusion::Vector3 H11_, H12_, H21_, H31_, H32_, H24_, H41_, H42_;
   Vector3d V_old;
   Vector3d Pos_old;
+  Vector3d ins_att,ins_vel,ins_pos;
 
   bool initializer;
   bool truths_1;
@@ -68,6 +69,7 @@ public:
   bool relative_update_done;
   bool gps_update_done;
   bool wo_update_done;
+  bool propagation_is_done;
   double _range;
   double res_range;
   double error_im;
