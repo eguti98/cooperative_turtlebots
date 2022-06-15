@@ -316,12 +316,12 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
       MatrixXd K_gps(15,6);
 
       gps_pos[0] = msg->pose.pose.position.x + (double(rand()) / (double(RAND_MAX) + 1.0))*0.1 - 0.05; // White noise (5cm)
-      gps_pos[1] = msg->pose.pose.position.y + (double(rand()) / (double(RAND_MAX) + 1.0))*0.1 - 0.05; // White noise (5cm)
-      gps_pos[2] = msg->pose.pose.position.z;
+      gps_pos[1] = -msg->pose.pose.position.y + (double(rand()) / (double(RAND_MAX) + 1.0))*0.1 - 0.05; // White noise (5cm)
+      gps_pos[2] = -msg->pose.pose.position.z;
 
       gps_vel[0] = msg->twist.twist.linear.x + (double(rand()) / (double(RAND_MAX) + 1.0))*0.02 - 0.01; // White noise (1cm/s)
-      gps_vel[1] = msg->twist.twist.linear.y + (double(rand()) / (double(RAND_MAX) + 1.0))*0.02 - 0.01; // White noise (1cm/s)
-      gps_vel[2] = msg->twist.twist.linear.z;
+      gps_vel[1] = -msg->twist.twist.linear.y + (double(rand()) / (double(RAND_MAX) + 1.0))*0.02 - 0.01; // White noise (1cm/s)
+      gps_vel[2] = -msg->twist.twist.linear.z;
 
       z_gps_pos= gps_pos-_pos;
       z_gps_vel= gps_vel-_vel;
@@ -1113,19 +1113,19 @@ void DekfSensorFusion::initialization()
 
 if (truths_0==1 && truths_1==1 && truths_2==1) {
   if (robot_name == "tb3_0") {
-    _pos << true_position0(0),true_position0(1),true_position0(2);
+    _pos << true_position0(0),-true_position0(1),-true_position0(2);
     _attitude << true_position0(3),true_position0(4),true_position0(5);
     _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
     initializer = 1;
   }
   else if (robot_name == "tb3_1") {
-    _pos << true_position1(0),true_position1(1),true_position1(2);
+    _pos << true_position1(0),-true_position1(1),-true_position1(2);
     _attitude << true_position1(3),true_position1(4),true_position1(5);
     _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
     initializer = 1;
   }
   else if (robot_name == "tb3_2") {
-    _pos << true_position2(0),true_position2(1),true_position2(2);
+    _pos << true_position2(0),-true_position2(1),-true_position2(2);
     _attitude << true_position2(3),true_position2(4),true_position2(5);
     _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
     initializer = 1;
