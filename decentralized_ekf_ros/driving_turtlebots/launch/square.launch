@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="square" pkg="driving_turtlebots" type="square.py" output="screen">
+  </node>
+</launch>

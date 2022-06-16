@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <group ns="tb3_0">
+    <param name="robot_name" type="str" value="tb3_0" />
+    <node name="drawasquare" pkg="driving_turtlebots" type="square.py" output="screen"/>
+  </group>
+  <group ns="tb3_1">
+    <param name="robot_name" type="str" value="tb3_1" />
+    <node name="drawasquare" pkg="driving_turtlebots" type="square.py" output="screen"/>
+  </group>
+  <group ns="tb3_2">
+    <param name="robot_name" type="str" value="tb3_2" />
+    <node name="drawasquare" pkg="driving_turtlebots" type="square.py" output="screen"/>
+  </group>
+</launch>
