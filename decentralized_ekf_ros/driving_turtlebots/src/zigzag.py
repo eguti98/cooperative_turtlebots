@@ -23,7 +23,7 @@ class DrawAZigzag:
 
         # FORWARD
         move_cmd = Twist()
-        move_cmd.linear.x = 0.10
+        move_cmd.linear.x = 0.20
         # STOP
         stop_cmd = Twist()
         stop_cmd.linear.x = 0
@@ -72,7 +72,7 @@ class DrawAZigzag:
                 r.sleep()
         # FORWARD
             rospy.loginfo('Going Straight')
-            for x in range(0, 280):
+            for x in range(0, 140):
                 self.cmd_vel.publish(move_cmd)
                 r.sleep()
         # STOP
