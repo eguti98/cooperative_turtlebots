@@ -40,26 +40,27 @@ class DrawAZigzag:
         count = 0
         while not rospy.is_shutdown():
 
-        # LEFT TURN
-            rospy.loginfo('Left Turning')
-            for x in range(0, 30):
-                self.cmd_vel.publish(turn_left_cmd)
-                r.sleep()
-        # STOP
-            rospy.loginfo('Stopping')
-            for x in range(0, 30):
-                self.cmd_vel.publish(stop_cmd)
-                r.sleep()
-        # FORWARD
-            rospy.loginfo('Going Straight')
-            for x in range(0, 140):
-                self.cmd_vel.publish(move_cmd)
-                r.sleep()
-        # STOP
-            rospy.loginfo('Stopping')
-            for x in range(0, 30):
-                self.cmd_vel.publish(stop_cmd)
-                r.sleep()
+            if count == 0:
+                # LEFT TURN
+                rospy.loginfo('Left Turning')
+                for x in range(0, 30):
+                    self.cmd_vel.publish(turn_left_cmd)
+                    r.sleep()
+                # STOP
+                rospy.loginfo('Stopping')
+                for x in range(0, 30):
+                    self.cmd_vel.publish(stop_cmd)
+                    r.sleep()
+                # FORWARD
+                rospy.loginfo('Going Straight')
+                for x in range(0, 70):
+                    self.cmd_vel.publish(move_cmd)
+                    r.sleep()
+                # STOP
+                rospy.loginfo('Stopping')
+                for x in range(0, 30):
+                    self.cmd_vel.publish(stop_cmd)
+                    r.sleep()
         # RIGHT TURN
             rospy.loginfo('Right Turning')
             for x in range(0, 60):
@@ -82,8 +83,18 @@ class DrawAZigzag:
                 r.sleep()
         # LEFT TURN
             rospy.loginfo('Left Turning')
-            for x in range(0, 30):
+            for x in range(0, 60):
                 self.cmd_vel.publish(turn_left_cmd)
+                r.sleep()
+        # STOP
+            rospy.loginfo('Stopping')
+            for x in range(0, 30):
+                self.cmd_vel.publish(stop_cmd)
+                r.sleep()
+        # FORWARD
+            rospy.loginfo('Going Straight')
+            for x in range(0, 140):
+                self.cmd_vel.publish(move_cmd)
                 r.sleep()
         # STOP
             rospy.loginfo('Stopping')
