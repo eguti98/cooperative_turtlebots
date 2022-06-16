@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="zigzag" pkg="driving_turtlebots" type="zigzag.py" output="screen">
+  </node>
+</launch>
