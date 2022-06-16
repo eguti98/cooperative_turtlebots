@@ -47,7 +47,7 @@ class DrawAZigzag:
                 r.sleep()
         # STOP
             rospy.loginfo('Stopping')
-            for x in range(0, 20):
+            for x in range(0, 30):
                 self.cmd_vel.publish(stop_cmd)
                 r.sleep()
         # FORWARD
@@ -57,7 +57,7 @@ class DrawAZigzag:
                 r.sleep()
         # STOP
             rospy.loginfo('Stopping')
-            for x in range(0, 20):
+            for x in range(0, 30):
                 self.cmd_vel.publish(stop_cmd)
                 r.sleep()
         # RIGHT TURN
@@ -67,7 +67,7 @@ class DrawAZigzag:
                 r.sleep()
         # STOP
             rospy.loginfo('Stopping')
-            for x in range(0, 20):
+            for x in range(0, 30):
                 self.cmd_vel.publish(stop_cmd)
                 r.sleep()
         # FORWARD
@@ -77,7 +77,7 @@ class DrawAZigzag:
                 r.sleep()
         # STOP
             rospy.loginfo('Stopping')
-            for x in range(0, 20):
+            for x in range(0, 30):
                 self.cmd_vel.publish(stop_cmd)
                 r.sleep()
         # LEFT TURN
@@ -87,7 +87,7 @@ class DrawAZigzag:
                 r.sleep()
         # STOP
             rospy.loginfo('Stopping')
-            for x in range(0, 20):
+            for x in range(0, 30):
                 self.cmd_vel.publish(stop_cmd)
                 r.sleep()
 
