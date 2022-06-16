@@ -42,6 +42,9 @@ public:
   Eigen::Matrix <double, 2, 1>  zupt_command_0;
   Eigen::Matrix <double, 2, 1>  zupt_command_1;
   Eigen::Matrix <double, 2, 1>  zupt_command_2;
+  Eigen::Matrix <double, 3, 1>  odom_command_0;
+  Eigen::Matrix <double, 3, 1>  odom_command_1;
+  Eigen::Matrix <double, 3, 1>  odom_command_2;
   Eigen::Matrix <double, 15, 1>  error_state_updated;
   Eigen::Matrix <double, 2, 1>  _range;
   Eigen::Matrix <double, 2, 1>  range_to_drone;
@@ -102,7 +105,9 @@ private:
   ros::Subscriber vel_command_tb0;  //Subscribes to velocity command from turtlebot 0
   ros::Subscriber vel_command_tb1;  //Subscribes to velocity command from turtlebot 1
   ros::Subscriber vel_command_tb2;  //Subscribes to velocity command from turtlebot 2
-
+  ros::Subscriber odom_tb0;  //Subscribes to velocity command from turtlebot 0
+  ros::Subscriber odom_tb1;  //Subscribes to velocity command from turtlebot 1
+  ros::Subscriber odom_tb2;  //Subscribes to velocity command from turtlebot 2
   ros::Publisher pubOdom_;
   ros::Publisher pubRange_;
   // ros::Publisher pubResidual_;
@@ -218,6 +223,9 @@ private:
   void vel_command_tb0Callback(const geometry_msgs::Twist::ConstPtr& msg);
   void vel_command_tb1Callback(const geometry_msgs::Twist::ConstPtr& msg);
   void vel_command_tb2Callback(const geometry_msgs::Twist::ConstPtr& msg);
+  void odom_tb0Callback(const nav_msgs::Odometry::ConstPtr& msg);
+  void odom_tb1Callback(const nav_msgs::Odometry::ConstPtr& msg);
+  void odom_tb2Callback(const nav_msgs::Odometry::ConstPtr& msg);
 
   void altimeterCallback(); // TODO: Fill this with altimeter message type based on what sensor used.
   void bearingCallback();   // TODO: Fill this with GPS message type based on what sensor used

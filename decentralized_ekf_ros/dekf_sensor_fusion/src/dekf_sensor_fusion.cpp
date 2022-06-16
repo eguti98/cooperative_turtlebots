@@ -121,6 +121,9 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   vel_command_tb0 = nh.subscribe("/tb3_0/cmd_vel", 1, &DekfSensorFusion::vel_command_tb0Callback, this);
   vel_command_tb1 = nh.subscribe("/tb3_1/cmd_vel", 1, &DekfSensorFusion::vel_command_tb1Callback, this);
   vel_command_tb2 = nh.subscribe("/tb3_2/cmd_vel", 1, &DekfSensorFusion::vel_command_tb2Callback, this);
+  odom_tb0 = nh.subscribe("/tb3_0/odom", 1, &DekfSensorFusion::odom_tb0Callback, this);
+  odom_tb1 = nh.subscribe("/tb3_1/odom", 1, &DekfSensorFusion::odom_tb1Callback, this);
+  odom_tb2 = nh.subscribe("/tb3_2/odom", 1, &DekfSensorFusion::odom_tb2Callback, this);
 }
 //
 // IMU Prediction
@@ -205,7 +208,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
   if (robot_name=="tb3_0") {
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
-    if (zupt_command_0(0)==0 && zupt_command_0(1)==0) {
+    if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
       zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
@@ -214,7 +217,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
   else if (robot_name=="tb3_1") {
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
-    if (zupt_command_1(0)==0 && zupt_command_1(1)==0) {
+    if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
       zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
@@ -223,7 +226,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
   else if (robot_name=="tb3_2") {
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
-    if (zupt_command_2(0)==0 && zupt_command_2(1)==0) {
+    if (zupt_command_2(0)==0 && zupt_command_2(1)==0 && abs(odom_command_2(0))<0.001 && abs(odom_command_2(1))<0.001 && abs(odom_command_2(2))<0.01) {
       zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
@@ -1106,6 +1109,36 @@ void DekfSensorFusion::vel_command_tb2Callback(const geometry_msgs::Twist::Const
   double angular = msg->angular.z;
 
   zupt_command_2 << linear,angular;
+
+}
+void DekfSensorFusion::odom_tb0Callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+
+  double linear_x = msg->twist.twist.linear.x;
+  double linear_y = msg->twist.twist.linear.y;
+  double angular = msg->twist.twist.angular.z;
+
+  odom_command_0 << linear_x,linear_y,angular;
+
+}
+void DekfSensorFusion::odom_tb1Callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+
+  double linear_x = msg->twist.twist.linear.x;
+  double linear_y = msg->twist.twist.linear.y;
+  double angular = msg->twist.twist.angular.z;
+
+  odom_command_1 << linear_x,linear_y,angular;
+
+}
+void DekfSensorFusion::odom_tb2Callback(const nav_msgs::Odometry::ConstPtr &msg)
+{
+
+  double linear_x = msg->twist.twist.linear.x;
+  double linear_y = msg->twist.twist.linear.y;
+  double angular = msg->twist.twist.angular.z;
+
+  odom_command_2 << linear_x,linear_y,angular;
 
 }
 void DekfSensorFusion::initialization()
