@@ -218,7 +218,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -547,7 +547,7 @@ void DekfSensorFusion::relativeUpdate()
 
   res_range = range_update - h_range;
 
-  if (abs(res_range) > 500.0)
+  if (abs(res_range) > 10.0)
   {
       // return;
       ROS_ERROR("Relative Update Ignored");

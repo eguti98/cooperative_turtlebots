@@ -103,7 +103,7 @@ class DrawAZigzag:
                 r.sleep()
 
             count = count + 1
-            if count == 2:
+            if count == 1:
 
                 shutdown(self)
             if count == 0:

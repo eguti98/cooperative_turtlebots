@@ -1,0 +1,9 @@
+<launch>
+  <!-- <group ns="tb3_0"> -->
+    <!-- <param name="robot_name" type="str" value="tb3_0" /> -->
+    <group ns="tb3_2">
+      <param name="robot_name" type="str" value="tb3_2" />
+      <node name="drawaline" pkg="driving_turtlebots" type="line.py" output="screen"/>
+    </group>
+
+</launch>
