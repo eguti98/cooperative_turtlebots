@@ -75,7 +75,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   R_gpsVal << std::pow(0.1,2), std::pow(0.1,2), std::pow(0.1,2), std::pow(0.4,2), std::pow(0.4,2), std::pow(0.4,2);
   R_gps = R_gpsVal.asDiagonal();
 
-  R_range << 0.2*0.2; // TODO: Value?
+  R_range << 0.5*0.5; // TODO: Value?
   initializer = 0;
   truths_0 = 0;
   truths_1 = 0;
@@ -209,7 +209,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -218,7 +218,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -292,15 +292,15 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
     if (robot_name=="tb3_0")
     {
-      degradation = 1-(sqrt(pow(true_position0(0)-(-10),2)+pow(true_position0(1)-(0),2)))/10;
+      degradation = 1-(sqrt(pow(true_position0(0)-(-7),2)+pow(true_position0(1)-(0),2)))/7;
     }
     else if (robot_name=="tb3_1")
     {
-      degradation = 1-(sqrt(pow(true_position1(0)-(-10),2)+pow(true_position1(1)-(0),2)))/10;
+      degradation = 1-(sqrt(pow(true_position1(0)-(-7),2)+pow(true_position1(1)-(0),2)))/7;
     }
     else if (robot_name=="tb3_2")
     {
-      degradation = 1-(sqrt(pow(true_position2(0)-(-10),2)+pow(true_position2(1)-(0),2)))/10;
+      degradation = 1-(sqrt(pow(true_position2(0)-(-7),2)+pow(true_position2(1)-(0),2)))/7;
     }
 
     if (degradation < 0) {
@@ -345,18 +345,35 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
       _P=(Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _P * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
 
-
       if (robot_name=="tb3_0") {
+        double error = sqrt(pow((true_position0(0)-_pos(0)),2)+pow((-true_position0(1)-_pos(1)),2)+pow((-true_position0(2)-_pos(2)),2));
+        if (error > 1) {
+          ROS_INFO("------------");
+          ROS_ERROR("0 Gps Update Wrong");
+          ROS_INFO("------------");
+        }
         _globalP.block<15,15>(0,0) = _P;
         _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
         _globalP.block<15,15>(0,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
       }
       else if (robot_name=="tb3_1") {
+        double error = sqrt(pow((true_position1(0)-_pos(0)),2)+pow((-true_position1(1)-_pos(1)),2)+pow((-true_position1(2)-_pos(2)),2));
+        if (error > 1) {
+          ROS_INFO("------------");
+          ROS_ERROR("1 Gps Update Wrong");
+          ROS_INFO("------------");
+        }
         _globalP.block<15,15>(15,15) = _P;
         _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
         _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
       }
       else if (robot_name=="tb3_2") {
+        double error = sqrt(pow((true_position2(0)-_pos(0)),2)+pow((-true_position2(1)-_pos(1)),2)+pow((-true_position2(2)-_pos(2)),2));
+        if (error > 1) {
+          ROS_INFO("------------");
+          ROS_ERROR("2 Gps Update Wrong");
+          ROS_INFO("------------");
+        }
         _globalP.block<15,15>(30,30) = _P;
         _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
         _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
@@ -366,11 +383,11 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
       // publishOdom_();
       // publishRange_();
       // publishResidual_();
-      ROS_WARN("GPS update");
+      // ROS_WARN("GPS update");
     }
     else
     {
-      ROS_ERROR("GPS not available");
+      // ROS_ERROR("GPS not available");
     }
   }
 }
@@ -431,6 +448,7 @@ void DekfSensorFusion::relativeUpdate()
 
       range_update = _range(1);
     }
+    errorb = sqrt(pow((true_position0(0)-_x(6)),2)+pow((-true_position0(1)-_x(7)),2)+pow((-true_position0(2)-_x(8)),2));
   }
   else if (robot_name=="tb3_1")
   {
@@ -476,6 +494,7 @@ void DekfSensorFusion::relativeUpdate()
 
       range_update = _range(1);
     }
+    errorb = sqrt(pow((true_position1(0)-_x(6)),2)+pow((-true_position1(1)-_x(7)),2)+pow((-true_position1(2)-_x(8)),2));
   }
   else if (robot_name=="tb3_2")
   {
@@ -506,12 +525,12 @@ void DekfSensorFusion::relativeUpdate()
       P_d12 = _globalP.block<15,15>(15,30);      //Sigma_ij
       P_d21 = _globalP.block<15,15>(30,15);      //Sigma_ji
       P_d2 = _globalP.block<15,15>(30,30);       //Sigma_jj
-      P_corr = P_d12 * P_d21.transpose();
+      P_corr = P_d21 * P_d12.transpose();
       P_corr2 = P_corr.transpose();
 
       covariances.block<15,15>(0,0) = P_d1;
-      covariances.block<15,15>(0,15) = P_corr;
-      covariances.block<15,15>(15,0) = P_corr2;
+      covariances.block<15,15>(0,15) = P_corr2;
+      covariances.block<15,15>(15,0) = P_corr;
       covariances.block<15,15>(15,15) = P_d2;
 
       state1 = state_received;                   // Total state
@@ -521,6 +540,7 @@ void DekfSensorFusion::relativeUpdate()
 
       range_update = _range(1);
     }
+    errorb = sqrt(pow((true_position2(0)-_x(6)),2)+pow((-true_position2(1)-_x(7)),2)+pow((-true_position2(2)-_x(8)),2));
   }
 
   states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
@@ -549,9 +569,10 @@ void DekfSensorFusion::relativeUpdate()
 
   if (abs(res_range) > 10.0)
   {
-      // return;
-      ROS_ERROR("Relative Update Ignored");
-      ROS_INFO_STREAM("Range "<< robot_id_received << ": " << range_update);
+      ROS_INFO("------------");
+      ROS_WARN("Relative Update Ignored");
+      // ROS_INFO_STREAM("Range "<< robot_id_received << ": " << range_update);
+      ROS_INFO("------------");
       /* Perform Zupt? */
   }
   else
@@ -594,14 +615,14 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
-        _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
+        // _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
 
         relative_update_done = 1;
-        ROS_WARN("Relative Update Done");
-        ROS_INFO_STREAM("Range tb1: " << range_update);
+        // ROS_WARN("Relative Update Done");
+        // ROS_INFO_STREAM("Range tb1: " << range_update);
         // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
         // ROS_INFO("Error: %.4f",error);
 
@@ -633,18 +654,19 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        _globalP.block<15,15>(0,15) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,15);
+        // _globalP.block<15,15>(0,15) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,15);
 
         relative_update_done = 1;
-        ROS_WARN("Relative Update Done");
-        ROS_INFO_STREAM("Range tb2: " << range_update);
+        // ROS_WARN("Relative Update Done");
+        // ROS_INFO_STREAM("Range tb2: " << range_update);
         // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
         // ROS_INFO("Error: %.4f",error);
 
       }
+      errora = sqrt(pow((true_position0(0)-_pos(0)),2)+pow((-true_position0(1)-_pos(1)),2)+pow((-true_position0(2)-_pos(2)),2));
     }
     else if (robot_name=="tb3_1")
     {
@@ -678,11 +700,11 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
-        _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
+        // _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
 
         relative_update_done = 1;
-        ROS_WARN("Relative Update Done");
-        ROS_INFO_STREAM("Range tb0: " << range_update);
+        // ROS_WARN("Relative Update Done");
+        // ROS_INFO_STREAM("Range tb0: " << range_update);
         // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
         // ROS_INFO("Error: %.4f",error);
 
@@ -714,19 +736,21 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
-        _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        _globalP.block<15,15>(15,0) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,0);
+        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,0);
 
         relative_update_done = 1;
-        ROS_WARN("Relative Update Done");
-        ROS_INFO_STREAM("Range tb2: " << range_update);
+        // ROS_WARN("Relative Update Done");
+        // ROS_INFO_STREAM("Range tb2: " << range_update);
         // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
         // ROS_INFO("Error: %.4f",error);
 
       }
+      errora = sqrt(pow((true_position1(0)-_pos(0)),2)+pow((-true_position1(1)-_pos(1)),2)+pow((-true_position1(2)-_pos(2)),2));
     }
+
     else if (robot_name=="tb3_2")
     {
       if (robot_id_received=="tb3_0")
@@ -757,13 +781,13 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
+        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
 
         relative_update_done = 1;
-        ROS_WARN("Relative Update Done");
-        ROS_INFO_STREAM("Range tb0: " << range_update);
+        // ROS_WARN("Relative Update Done");
+        // ROS_INFO_STREAM("Range tb0: " << range_update);
         // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
         // ROS_INFO("Error: %.4f",error);
       }
@@ -794,18 +818,39 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
+        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
 
         relative_update_done = 1;
-        ROS_WARN("Relative Update Done");
-        ROS_INFO_STREAM("Range tb1: " << range_update);
+        // ROS_WARN("Relative Update Done");
+        // ROS_INFO_STREAM("Range tb1: " << range_update);
         // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
         // ROS_INFO("Error: %.4f",error);
       }
+      errora = sqrt(pow((true_position2(0)-_pos(0)),2)+pow((-true_position2(1)-_pos(1)),2)+pow((-true_position2(2)-_pos(2)),2));
     }
+
+    if (errora < errorb) {
+      ROS_WARN_STREAM("Good Relative Update: " << robot_name << " & "<< robot_id_received);
+      ROS_INFO("Error before: %.4f",errorb);
+      ROS_INFO("Error after: %.4f",errora);
+    }
+    else if (errora > errorb) {
+      ROS_ERROR_STREAM("Wrong Relative Update: " << robot_name << " & "<< robot_id_received);
+      ROS_INFO("Error before: %.4f",errorb);
+      ROS_INFO("Error after: %.4f",errora);
+    }
+    else if (abs(errora-errorb) > 1) {
+      ROS_INFO("--------");
+      ROS_WARN("???");
+      ROS_INFO("--------");
+    }
+
   }
+
+
+
 }
 //
 // SERVER
@@ -979,47 +1024,47 @@ void DekfSensorFusion::SendCovariance()
   {
 
       if (robot_name=="tb3_0") {
-        ROS_ERROR("Failed to call Service tb2");
-        ROS_INFO("Range tb2: %.4f",_range(1));
+        // ROS_ERROR("Failed to call Service tb2");
+        // ROS_INFO("Range tb2: %.4f",_range(1));
       }
       else if (robot_name=="tb3_1") {
-        ROS_ERROR("Failed to call Service tb2");
-        ROS_INFO("Range tb2: %.4f",_range(1));
+        // ROS_ERROR("Failed to call Service tb2");
+        // ROS_INFO("Range tb2: %.4f",_range(1));
       }
       else if (robot_name=="tb3_2") {
-        ROS_ERROR("Failed to call Service tb1");
-        ROS_INFO("Range tb1: %.4f",_range(1));
+        // ROS_ERROR("Failed to call Service tb1");
+        // ROS_INFO("Range tb1: %.4f",_range(1));
       }
   }
 
   if (robot_name=="tb3_0") {
     if (_range(0)>5) {
-      ROS_ERROR("Out of Range tb1");
-      ROS_INFO("Range tb1: %.4f",_range(0));
+      // ROS_ERROR("Out of Range tb1");
+      // ROS_INFO("Range tb1: %.4f",_range(0));
     }
     else if (_range(1)>5) {
-      ROS_ERROR("Out of Range tb2");
-      ROS_INFO("Range tb2: %.4f",_range(1));
+      // ROS_ERROR("Out of Range tb2");
+      // ROS_INFO("Range tb2: %.4f",_range(1));
     }
   }
   else if (robot_name=="tb3_1") {
     if (_range(0)>5) {
-      ROS_ERROR("Out of Range tb0");
-      ROS_INFO("Range tb0: %.4f",_range(0));
+      // ROS_ERROR("Out of Range tb0");
+      // ROS_INFO("Range tb0: %.4f",_range(0));
     }
     else if (_range(1)>5) {
-      ROS_ERROR("Out of Range tb2");
-      ROS_INFO("Range tb2: %.4f",_range(1));
+      // ROS_ERROR("Out of Range tb2");
+      // ROS_INFO("Range tb2: %.4f",_range(1));
     }
   }
   else if (robot_name=="tb3_2") {
     if (_range(0)>5) {
-      ROS_ERROR("Out of Range tb0");
-      ROS_INFO("Range tb0: %.4f",_range(0));
+      // ROS_ERROR("Out of Range tb0");
+      // ROS_INFO("Range tb0: %.4f",_range(0));
     }
     else if (_range(1)>5) {
-      ROS_ERROR("Out of Range tb1");
-      ROS_INFO("Range tb1: %.4f",_range(1));
+      // ROS_ERROR("Out of Range tb1");
+      // ROS_INFO("Range tb1: %.4f",_range(1));
     }
   }
 
@@ -1626,7 +1671,7 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
 
-    ROS_INFO("----------------");
+    // ROS_INFO("----------------");
     if (dekf_sensor_fusion.initializer == 0 && dekf_sensor_fusion.truths_0 == 1 && dekf_sensor_fusion.truths_1 == 1 && dekf_sensor_fusion.truths_2 == 1) {
       dekf_sensor_fusion.initialization();
     }
@@ -1641,24 +1686,24 @@ int main(int argc, char **argv)
       {
         if (dekf_sensor_fusion.robot_name=="tb3_0")
         {
-          ROS_ERROR_STREAM("Out of Range tb1");
-          ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(0));
-          ROS_ERROR_STREAM("Out of Range tb2");
-          ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
+          // ROS_ERROR_STREAM("Out of Range tb1");
+          // ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(0));
+          // ROS_ERROR_STREAM("Out of Range tb2");
+          // ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
         }
         else if (dekf_sensor_fusion.robot_name=="tb3_1")
         {
-          ROS_ERROR_STREAM("Out of Range tb0");
-          ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
-          ROS_ERROR_STREAM("Out of Range tb2");
-          ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
+          // ROS_ERROR_STREAM("Out of Range tb0");
+          // ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+          // ROS_ERROR_STREAM("Out of Range tb2");
+          // ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
         }
         else if (dekf_sensor_fusion.robot_name=="tb3_2")
         {
-          ROS_ERROR_STREAM("Out of Range tb0");
-          ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
-          ROS_ERROR_STREAM("Out of Range tb1");
-          ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(1));
+          // ROS_ERROR_STREAM("Out of Range tb0");
+          // ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
+          // ROS_ERROR_STREAM("Out of Range tb1");
+          // ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(1));
         }
       }
     }

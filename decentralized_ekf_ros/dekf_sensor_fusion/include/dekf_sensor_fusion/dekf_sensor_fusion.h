@@ -80,6 +80,8 @@ public:
   double res_range;
   double range_update;
   double error_im;
+  double errora;
+  double errorb;
 
   Matrix3d eye3=Eigen::Matrix3d::Identity();
   Matrix3d zeros3=Eigen::Matrix3d::Zero(3,3);

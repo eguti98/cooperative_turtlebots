@@ -46,8 +46,7 @@ class DrawALine:
 
         count = 0
         while not rospy.is_shutdown():
-            print(robot)
-            #print(robot)
+
             if robot == "tb3_0":
                 # FORWARD
                 rospy.loginfo('Going Straight')
@@ -84,9 +83,17 @@ class DrawALine:
                 r.sleep()
 
             count = count + 1
-            if count == 4:
 
-                shutdown(self)
+            if robot == "tb3_0":
+                if count == 2:
+                    shutdown(self)
+            elif robot == "tb3_1":
+                if count == 2:
+                    shutdown(self)
+            elif robot == "tb3_2":
+                if count == 1:
+                    shutdown(self)
+
             if count == 0:
                 rospy.loginfo("TurtleBot should be close to the original starting position (but it's probably way off)")
 
