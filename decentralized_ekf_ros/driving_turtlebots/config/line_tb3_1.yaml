@@ -1,0 +1,9 @@
+\loop_rate : 1
+robot_name: "tb3_1"
+# imu_topic_name : "/scout_1/imu"
+# odometry_dr_topic_name : "/lidarTracking/drone_ekf"
+# odometry_truth_in_topic_name: "/gazebo/model_states"
+# odometry_truth_out_topic_name: "/tb3_0/gps"
+# # odometry_err_topic_name: "/odometry/error"
+# odometry_frame_id : "ground_plane"
+# odometry_child_frame_id : "tb3_0/base_footprint"

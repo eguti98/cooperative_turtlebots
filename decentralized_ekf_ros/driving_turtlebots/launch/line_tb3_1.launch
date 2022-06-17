@@ -1,9 +1,15 @@
 <launch>
   <!-- <group ns="tb3_0"> -->
-    <param name="robot_name" type="str" value="tb3_1" />
+    <!-- <param name="robot_name" type="str" value="tb3_1" /> -->
     <group ns="tb3_1">
-      <!-- <param name="robot_name" type="str" value="tb3_1" /> -->
-      <node name="drawaline" pkg="driving_turtlebots" type="line.py" output="screen"/>
+      <param name="robot_name" type="str" value="tb3_1" />
+      <include file="$(find driving_turtlebots)/launch/line.launch"/>
+      <!-- <node name="drawaline" pkg="driving_turtlebots" type="line.py" output="screen"/> -->
+      <!-- <rosparam
+        command="load"
+        file="$(find driving_turtlebots)/config/line_tb3_1.yaml"
+        subst_value="true"
+      /> -->
     </group>
 
 </launch>

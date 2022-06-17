@@ -16,7 +16,8 @@ class DrawALine:
     def __init__(self):
 
         rospy.init_node('drawaline', anonymous=True)
-        robot = rospy.get_param("/robot_name")
+        robot = rospy.get_param("robot_name")
+
         rospy.on_shutdown(self.shutdown)
         self.cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         r = rospy.Rate(10) #10HZ
@@ -45,22 +46,25 @@ class DrawALine:
 
         count = 0
         while not rospy.is_shutdown():
+            print(robot)
+            #print(robot)
             if robot == "tb3_0":
                 # FORWARD
                 rospy.loginfo('Going Straight')
-                for x in range(0, 500):
+                for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
+
                     r.sleep()
             elif robot == "tb3_1":
                 # FORWARD
                 rospy.loginfo('Going Straight')
-                for x in range(0, 500):
+                for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
                     r.sleep()
             elif robot == "tb3_2":
                 # FORWARD
                 rospy.loginfo('Going Straight')
-                for x in range(0, 1000):
+                for x in range(0, 500):
                     self.cmd_vel.publish(move_cmd)
                     r.sleep()
         # STOP
