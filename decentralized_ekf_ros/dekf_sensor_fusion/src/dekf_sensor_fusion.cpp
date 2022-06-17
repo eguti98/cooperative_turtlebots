@@ -75,7 +75,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   R_gpsVal << std::pow(0.1,2), std::pow(0.1,2), std::pow(0.1,2), std::pow(0.4,2), std::pow(0.4,2), std::pow(0.4,2);
   R_gps = R_gpsVal.asDiagonal();
 
-  R_range << 0.5*0.5; // TODO: Value?
+  R_range << 0.2*0.2; // TODO: Value?
   initializer = 0;
   truths_0 = 0;
   truths_1 = 0;
@@ -209,7 +209,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -227,7 +227,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0 && abs(odom_command_2(0))<0.001 && abs(odom_command_2(1))<0.001 && abs(odom_command_2(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -246,20 +246,20 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       //Update Global P
       if (robot_name=="tb3_0") {
         _globalP.block<15,15>(0,0) = _P;
-        _globalP.block<15,15>(0,15) = STM*_globalP.block<15,15>(0,15);
-        _globalP.block<15,15>(0,30) = STM*_globalP.block<15,15>(0,30);
+        // _globalP.block<15,15>(0,15) = STM*_globalP.block<15,15>(0,15);
+        // _globalP.block<15,15>(0,30) = STM*_globalP.block<15,15>(0,30);
         error_im = sqrt(pow((true_position0(0)-_x(6)),2)+pow((true_position0(1)-_x(7)),2)+pow((true_position0(2)-_x(8)),2));
       }
       else if (robot_name=="tb3_1") {
         _globalP.block<15,15>(15,15) = _P;
-        _globalP.block<15,15>(15,0) = STM*_globalP.block<15,15>(15,0);
-        _globalP.block<15,15>(15,30) = STM*_globalP.block<15,15>(15,30);
+        // _globalP.block<15,15>(15,0) = STM*_globalP.block<15,15>(15,0);
+        // _globalP.block<15,15>(15,30) = STM*_globalP.block<15,15>(15,30);
         error_im = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
       }
       else if (robot_name=="tb3_2") {
         _globalP.block<15,15>(30,30) = _P;
-        _globalP.block<15,15>(30,0) = STM*_globalP.block<15,15>(30,0);
-        _globalP.block<15,15>(30,15) = STM*_globalP.block<15,15>(30,15);
+        // _globalP.block<15,15>(30,0) = STM*_globalP.block<15,15>(30,0);
+        // _globalP.block<15,15>(30,15) = STM*_globalP.block<15,15>(30,15);
         error_im = sqrt(pow((true_position2(0)-_x(6)),2)+pow((true_position2(1)-_x(7)),2)+pow((true_position2(2)-_x(8)),2));
       }
 
@@ -353,8 +353,8 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
           ROS_INFO("------------");
         }
         _globalP.block<15,15>(0,0) = _P;
-        _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
-        _globalP.block<15,15>(0,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        // _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        // _globalP.block<15,15>(0,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(0,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
       }
       else if (robot_name=="tb3_1") {
         double error = sqrt(pow((true_position1(0)-_pos(0)),2)+pow((-true_position1(1)-_pos(1)),2)+pow((-true_position1(2)-_pos(2)),2));
@@ -364,8 +364,8 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
           ROS_INFO("------------");
         }
         _globalP.block<15,15>(15,15) = _P;
-        _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
-        _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        // _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        // _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(15,30) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
       }
       else if (robot_name=="tb3_2") {
         double error = sqrt(pow((true_position2(0)-_pos(0)),2)+pow((-true_position2(1)-_pos(1)),2)+pow((-true_position2(2)-_pos(2)),2));
@@ -375,8 +375,8 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
           ROS_INFO("------------");
         }
         _globalP.block<15,15>(30,30) = _P;
-        _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
-        _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        // _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,0) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
+        // _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_gps * H_gps ).transpose() + K_gps * R_gps * K_gps.transpose();
       }
       gps_update_done = 1;
 
@@ -567,7 +567,7 @@ void DekfSensorFusion::relativeUpdate()
 
   res_range = range_update - h_range;
 
-  if (abs(res_range) > 10.0)
+  if (abs(res_range) > 200.0)
   {
       ROS_INFO("------------");
       ROS_WARN("Relative Update Ignored");
@@ -1365,18 +1365,18 @@ Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
 
         if (robot_name=="tb3_0") {
           _globalP.block<15,15>(0,0) = _P;
-          _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
-          _globalP.block<15,15>(0,30) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(0,30) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+          // _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(0,15) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+          // _globalP.block<15,15>(0,30) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(0,30) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
         }
         else if (robot_name=="tb3_1") {
           _globalP.block<15,15>(15,15) = _P;
-          _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
-          _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(15,30) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+          // _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(15,0) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+          // _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(15,30) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
         }
         else if (robot_name=="tb3_2") {
           _globalP.block<15,15>(30,30) = _P;
-          _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(30,0) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
-          _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+          // _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(30,0) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
+          // _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
         }
 
 
