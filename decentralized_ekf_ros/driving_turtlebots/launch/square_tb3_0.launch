@@ -1,8 +1,8 @@
 <launch>
   <!-- <group ns="tb3_0"> -->
-    <!-- <param name="robot_name" type="str" value="tb3_0" /> -->
+    <param name="robot_name" type="str" value="tb3_0" />
     <group ns="tb3_0">
-      <param name="robot_name" type="str" value="tb3_0" />
+      <!-- <param name="robot_name" type="str" value="tb3_0" /> -->
       <node name="drawasquare" pkg="driving_turtlebots" type="square.py" output="screen"/>
     </group>
 

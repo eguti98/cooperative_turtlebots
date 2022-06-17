@@ -292,15 +292,15 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
     if (robot_name=="tb3_0")
     {
-      degradation = 1-(sqrt(pow(true_position0(0)-(0),2)+pow(true_position0(1)-(0),2)))/5;
+      degradation = 1-(sqrt(pow(true_position0(0)-(-10),2)+pow(true_position0(1)-(0),2)))/10;
     }
     else if (robot_name=="tb3_1")
     {
-      degradation = 1-(sqrt(pow(true_position1(0)-(0),2)+pow(true_position1(1)-(0),2)))/5;
+      degradation = 1-(sqrt(pow(true_position1(0)-(-10),2)+pow(true_position1(1)-(0),2)))/10;
     }
     else if (robot_name=="tb3_2")
     {
-      degradation = 1-(sqrt(pow(true_position2(0)-(0),2)+pow(true_position2(1)-(0),2)))/5;
+      degradation = 1-(sqrt(pow(true_position2(0)-(-10),2)+pow(true_position2(1)-(0),2)))/10;
     }
 
     if (degradation < 0) {

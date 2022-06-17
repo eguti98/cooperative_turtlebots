@@ -1,8 +1,8 @@
 <launch>
   <!-- <group ns="tb3_0"> -->
-    <!-- <param name="robot_name" type="str" value="tb3_0" /> -->
+    <param name="robot_name" type="str" value="tb3_2" />
     <group ns="tb3_2">
-      <param name="robot_name" type="str" value="tb3_2" />
+      <!-- <param name="robot_name" type="str" value="tb3_2" /> -->
       <node name="drawazigzag" pkg="driving_turtlebots" type="zigzag.py" output="screen"/>
     </group>
 

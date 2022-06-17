@@ -16,14 +16,23 @@ class DrawALine:
     def __init__(self):
 
         rospy.init_node('drawaline', anonymous=True)
+        robot = rospy.get_param("/robot_name")
         rospy.on_shutdown(self.shutdown)
         self.cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         r = rospy.Rate(10) #10HZ
+        if robot == "tb3_0":
+            # FORWARD
+            move_cmd = Twist()
+            move_cmd.linear.x = 0.20
+        elif robot == "tb3_1":
+            # FORWARD
+            move_cmd = Twist()
+            move_cmd.linear.x = 0.20
+        elif robot == "tb3_2":
+            # FORWARD
+            move_cmd = Twist()
+            move_cmd.linear.x = 0.10
 
-
-        # FORWARD
-        move_cmd = Twist()
-        move_cmd.linear.x = 0.10
         # STOP
         stop_cmd = Twist()
         stop_cmd.linear.x = 0
@@ -36,12 +45,24 @@ class DrawALine:
 
         count = 0
         while not rospy.is_shutdown():
-
-        # FORWARD
-            rospy.loginfo('Going Straight')
-            for x in range(0, 500):
-                self.cmd_vel.publish(move_cmd)
-                r.sleep()
+            if robot == "tb3_0":
+                # FORWARD
+                rospy.loginfo('Going Straight')
+                for x in range(0, 500):
+                    self.cmd_vel.publish(move_cmd)
+                    r.sleep()
+            elif robot == "tb3_1":
+                # FORWARD
+                rospy.loginfo('Going Straight')
+                for x in range(0, 500):
+                    self.cmd_vel.publish(move_cmd)
+                    r.sleep()
+            elif robot == "tb3_2":
+                # FORWARD
+                rospy.loginfo('Going Straight')
+                for x in range(0, 1000):
+                    self.cmd_vel.publish(move_cmd)
+                    r.sleep()
         # STOP
             rospy.loginfo('Stopping')
             for x in range(0, 20):
@@ -59,7 +80,7 @@ class DrawALine:
                 r.sleep()
 
             count = count + 1
-            if count == 2:
+            if count == 4:
 
                 shutdown(self)
             if count == 0:
