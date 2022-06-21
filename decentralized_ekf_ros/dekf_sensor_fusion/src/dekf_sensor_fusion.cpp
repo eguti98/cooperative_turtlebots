@@ -59,7 +59,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
   _error_states = Eigen::VectorXd::Zero(15);
   Eigen::VectorXd _P_initVal(15);
-  _P_initVal << 0.01,0.01,0.01,0.1,0.1,0.1,0.5,0.5,0.5,0,0,0,0,0,0;
+  _P_initVal << 0.01,0.01,0.01,0.1,0.1,0.1,0.5,0.5,0.5,10e-6,10e-6,10e-6,10e-8,10e-8,10e-8;
   _P = _P_initVal.asDiagonal();
   _Q_ins = _P;
   _globalP = MatrixXd::Zero(45,45);
@@ -148,12 +148,12 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
       _t = _time.toSec();
       relative_update_done = 0;
       double p = msg->angular_velocity.x-bg(0);
-      double q = msg->angular_velocity.y-bg(1);
-      double r = msg->angular_velocity.z-bg(2);
+      double q = msg->angular_velocity.y+bg(1);
+      double r = msg->angular_velocity.z+bg(2);
       // omega_ib = p,q,r
       double ax= msg->linear_acceleration.x-ba(0);
-      double ay= msg->linear_acceleration.y-ba(1);
-      double az= msg->linear_acceleration.z + 9.81-ba(2);
+      double ay= msg->linear_acceleration.y+ba(1);
+      double az= msg->linear_acceleration.z + 9.81+ba(2);
       // // f_ib= ax,ay,az
 
       _imu_gyro << p, -q, -r;
@@ -209,7 +209,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -218,7 +218,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -619,7 +619,7 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
+        _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
 
         relative_update_done = 1;
         // ROS_WARN("Relative Update Done");
@@ -659,7 +659,7 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(0,15) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,15);
+        _globalP.block<15,15>(0,15) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,15);
 
         relative_update_done = 1;
         // ROS_WARN("Relative Update Done");
@@ -701,9 +701,9 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
+        _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
 
         relative_update_done = 1;
         // ROS_WARN("Relative Update Done");
@@ -742,7 +742,9 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,0);
+        _globalP.block<15,15>(15,0) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,0);
+
+
 
         relative_update_done = 1;
         // ROS_WARN("Relative Update Done");
@@ -785,9 +787,9 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
+        _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
 
         relative_update_done = 1;
         // ROS_WARN("Relative Update Done");
@@ -822,9 +824,9 @@ void DekfSensorFusion::relativeUpdate()
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
         // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
-        _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
+        _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
 
         relative_update_done = 1;
         // ROS_WARN("Relative Update Done");
@@ -1072,7 +1074,7 @@ void DekfSensorFusion::SendCovariance()
       // ROS_INFO("Range tb1: %.4f",_range(1));
     }
   }
-
+  std::cout << "P:\n" << _globalP << '\n';
 }
 //
 // INITIALIZATION FORMULAS

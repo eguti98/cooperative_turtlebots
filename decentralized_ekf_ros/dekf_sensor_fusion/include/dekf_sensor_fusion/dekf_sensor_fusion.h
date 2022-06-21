@@ -64,6 +64,7 @@ public:
   Eigen::Matrix <double, 15, 15> sigma_ij;
   Eigen::Matrix <double, 15, 15> sigma_ji;
   Eigen::Matrix <double, 15, 1> _error_states;
+  Eigen::Matrix <double, 45, 45> _globalP;
   typedef Eigen::Matrix<double, 15, 1> Vector15;
   typedef Eigen::Matrix<double, 3, 1> Vector3;
   Vector3d V_old;
@@ -129,7 +130,7 @@ private:
   Eigen::Matrix <double, 15, 15> _P_init;
   Eigen::Matrix <double, 15, 15> gps_UP;
   Eigen::Matrix <double, 15, 15> _Q_ins;
-  Eigen::Matrix <double, 45, 45> _globalP;
+  // Eigen::Matrix <double, 45, 45> _globalP;
   Eigen::Matrix <double, 6, 15> H_gps;
   Eigen::Matrix <double, 6, 6> R_gps;
   Eigen::Matrix <double, 1, 1> R_range;
