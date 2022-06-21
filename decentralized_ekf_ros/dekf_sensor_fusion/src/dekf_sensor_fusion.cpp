@@ -93,7 +93,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
             0,0,0,0,std::pow(0.02,2),0,
             0,0,0,0,0,std::pow(1.0,2);
 
-  R_zero = 0.001 * R_zero;
+  R_zero = 0.001 * R_zero; // TODO: Needed?
   // NON HOLONONOMIC R VALUES
   R_holo << 0.05,0,
             0,0.1;
@@ -1377,11 +1377,7 @@ Matrix3d Cnb = _euler2dcmV(_attitude(0),_attitude(1),_attitude(2));
           _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero) * _globalP.block<15,15>(30,15) * ( Eigen::MatrixXd::Identity(15,15) - K_zero * H_zero ).transpose() + K_zero * R_zero * K_zero.transpose();
         }
 
-
-//END - ZERO UPDATES
-// std::cout << "vel inside zupt" << '\n' << V_old <<'\n';
-
-return;
+  return;
 }
 void DekfSensorFusion::nonHolonomicUpdate()
 {
