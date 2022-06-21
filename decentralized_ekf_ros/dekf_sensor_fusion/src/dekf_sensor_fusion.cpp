@@ -59,7 +59,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   _x << _attitude(0),_attitude(1),_attitude(2),_vel(0),_vel(1),_vel(2),_pos(0),_pos(1),_pos(2),ba(0),ba(1),ba(2),bg(0),bg(1),bg(2);
   _error_states = Eigen::VectorXd::Zero(15);
   Eigen::VectorXd _P_initVal(15);
-  _P_initVal << 0.01,0.01,0.01,0.1,0.1,0.1,0.5,0.5,0.5,10e-6,10e-6,10e-6,10e-8,10e-8,10e-8;
+  _P_initVal << 0.01,0.01,0.01,0.1,0.1,0.1,0.5,0.5,0.5,10e-6,10e-6,10e-6,10e-8,10e-8,10e-8; //TODO: Check values
   _P = _P_initVal.asDiagonal();
   _Q_ins = _P;
   _globalP = MatrixXd::Zero(45,45);
@@ -93,6 +93,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
             0,0,0,0,std::pow(0.02,2),0,
             0,0,0,0,0,std::pow(1.0,2);
 
+  R_zero = 0.001 * R_zero;
   // NON HOLONONOMIC R VALUES
   R_holo << 0.05,0,
             0,0.1;
@@ -227,7 +228,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0 && abs(odom_command_2(0))<0.001 && abs(odom_command_2(1))<0.001 && abs(odom_command_2(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -616,9 +617,7 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
-        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
-        // _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
+        _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
 
         relative_update_done = 1;
@@ -655,10 +654,7 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        // _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,15);
-        // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
-        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
-        // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
+        _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(0,15) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,15);
 
         relative_update_done = 1;
@@ -670,7 +666,6 @@ void DekfSensorFusion::relativeUpdate()
       }
       errora = sqrt(pow((true_position0(0)-_pos(0)),2)+pow((-true_position0(1)-_pos(1)),2)+pow((-true_position0(2)-_pos(2)),2));
     }
-
     else if (robot_name=="tb3_1")
     {
       if (robot_id_received=="tb3_0")
@@ -699,9 +694,8 @@ void DekfSensorFusion::relativeUpdate()
         _error_states<<err_states.segment(15,15);
 
         _P = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
-        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,0);
+        _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(15,0) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
         _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
 
@@ -739,9 +733,9 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
-        // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
-        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
-        // _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
+        _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(15,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,30);
+        // _globalP.block<15,15>(15,30) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,0))*_globalP.block<15,15>(15,30) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,15)*P_d2;
         _globalP.block<15,15>(15,0) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(15,0);
 
 
@@ -755,7 +749,6 @@ void DekfSensorFusion::relativeUpdate()
       }
       errora = sqrt(pow((true_position1(0)-_pos(0)),2)+pow((-true_position1(1)-_pos(1)),2)+pow((-true_position1(2)-_pos(2)),2));
     }
-
     else if (robot_name=="tb3_2")
     {
       if (robot_id_received=="tb3_0")
@@ -785,9 +778,8 @@ void DekfSensorFusion::relativeUpdate()
 
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*_P.inverse()*_globalP.block<15,15>(30,15);
         _P = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
-        // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
-        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
+        _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(30,0) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
 
@@ -822,9 +814,8 @@ void DekfSensorFusion::relativeUpdate()
         _error_states<<err_states.segment(15,15);
 
         _P = covariances.block<15,15>(15,15);
-        // _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
-        // _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
-        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,0);
+        // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
+        _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(30,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
 
@@ -1074,7 +1065,7 @@ void DekfSensorFusion::SendCovariance()
       // ROS_INFO("Range tb1: %.4f",_range(1));
     }
   }
-  std::cout << "P:\n" << _globalP << '\n';
+  std::cout << "P " << robot_name << ": \n" << _globalP << '\n';
 }
 //
 // INITIALIZATION FORMULAS
