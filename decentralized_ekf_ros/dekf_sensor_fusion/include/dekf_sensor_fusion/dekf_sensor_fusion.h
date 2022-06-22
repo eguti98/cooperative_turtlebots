@@ -45,7 +45,8 @@ public:
   Eigen::Matrix <double, 3, 1>  odom_command_0;
   Eigen::Matrix <double, 3, 1>  odom_command_1;
   Eigen::Matrix <double, 3, 1>  odom_command_2;
-  Eigen::Matrix <double, 15, 1>  error_state_updated;
+  Eigen::Matrix <double, 15, 1>  error_state_updated_1;
+  Eigen::Matrix <double, 15, 1>  error_state_updated_2;
   Eigen::Matrix <double, 15, 1> relative_error_state_updated;
   Eigen::Matrix <double, 15, 1> relative_state_updated;
   Eigen::Matrix <double, 15, 1> error_state_response;
@@ -97,7 +98,7 @@ public:
 private:
   ros::NodeHandle &nh_;
   ros::ServiceClient dekf_sensor_fusion_client_1;
-  ros::ServiceClient dekf_sensor_fusion_client_2;
+  // ros::ServiceClient dekf_sensor_fusion_client_2;
   ros::ServiceServer dekf_sensor_fusion_service;
   bool calculation(dekf_sensor_fusion::SrvCov::Request &req, dekf_sensor_fusion::SrvCov::Response &res);
 //   // ros::Publisher pubOdom_, ...
