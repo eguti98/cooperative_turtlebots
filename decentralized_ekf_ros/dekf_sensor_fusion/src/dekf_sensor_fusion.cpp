@@ -617,6 +617,7 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
+        // _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,0))*_globalP.block<15,15>(0,15) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,15)*P_d1;
         _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(0,30) = covariances.block<15,15>(0,0)*P_d1.inverse()*_globalP.block<15,15>(0,30);
 
@@ -695,8 +696,10 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,0);
-        _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(15,0) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
-        _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
+        // _globalP.block<15,15>(15,0) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(15,0) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
+        // _globalP.block<15,15>(15,0) = covariances.block<15,15>(15,0);
+        _globalP.block<15,15>(15,0) = Eigen::MatrixXd::Identity(15,15);
+        // _globalP.block<15,15>(15,15) = covariances.block<15,15>(15,15);
         _globalP.block<15,15>(15,30) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(15,30);
 
         relative_update_done = 1;
@@ -779,7 +782,8 @@ void DekfSensorFusion::relativeUpdate()
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*_P.inverse()*_globalP.block<15,15>(30,15);
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
-        _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(30,0) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
+        // _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(30,0) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
+        _globalP.block<15,15>(30,0) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
 
@@ -815,7 +819,8 @@ void DekfSensorFusion::relativeUpdate()
 
         _P = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
-        _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(30,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
+        // _globalP.block<15,15>(30,15) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(30,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
+        _globalP.block<15,15>(30,15) = Eigen::MatrixXd::Identity(15,15);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
 
@@ -886,12 +891,103 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
         // ROS_WARN("Relative Update tb1");
         // ROS_INFO("Range tb1: %.4f",_range(0));
         relativeUpdate();
+        ROS_INFO_STREAM("Relative Update Done " << robot_id_received);
+        res.result = 1;
+        res.poscov.robot_id.data = robot_name;
+
+        res.poscov.pose.orientation.x = relative_state_updated[0];
+        res.poscov.pose.orientation.y = relative_state_updated[1];
+        res.poscov.pose.orientation.z = relative_state_updated[2];
+        res.poscov.twist.x = relative_state_updated[3];
+        res.poscov.twist.y = relative_state_updated[4];
+        res.poscov.twist.z = relative_state_updated[5];
+        res.poscov.pose.position.x = relative_state_updated[6];
+        res.poscov.pose.position.y = relative_state_updated[7];
+        res.poscov.pose.position.z = relative_state_updated[8];
+        res.poscov.bias.linear.x = relative_state_updated[9];
+        res.poscov.bias.linear.y = relative_state_updated[10];
+        res.poscov.bias.linear.z = relative_state_updated[11];
+        res.poscov.bias.angular.x = relative_state_updated[12];
+        res.poscov.bias.angular.y = relative_state_updated[13];
+        res.poscov.bias.angular.z = relative_state_updated[14];
+        res.poscov.err_pose.orientation.x = relative_error_state_updated[0];
+        res.poscov.err_pose.orientation.y = relative_error_state_updated[1];
+        res.poscov.err_pose.orientation.z = relative_error_state_updated[2];
+        res.poscov.err_twist.x = relative_error_state_updated[3];
+        res.poscov.err_twist.y = relative_error_state_updated[4];
+        res.poscov.err_twist.z = relative_error_state_updated[5];
+        res.poscov.err_pose.position.x = relative_error_state_updated[6];
+        res.poscov.err_pose.position.y = relative_error_state_updated[7];
+        res.poscov.err_pose.position.z = relative_error_state_updated[8];
+        res.poscov.err_bias.linear.x = relative_error_state_updated[9];
+        res.poscov.err_bias.linear.y = relative_error_state_updated[10];
+        res.poscov.err_bias.linear.z = relative_error_state_updated[11];
+        res.poscov.err_bias.angular.x = relative_error_state_updated[12];
+        res.poscov.err_bias.angular.y = relative_error_state_updated[13];
+        res.poscov.err_bias.angular.z = relative_error_state_updated[14];
+
+        std::vector<double> relative_cov_updatedV(225);
+        int count=0;
+        for (int i = 0; i < 15; i++) {
+          for (int j = 0; j < 15; j++) {
+            relative_cov_updatedV[count]  = relative_cov_updated(i,j);
+            count++;
+          }
+        }
+
+        res.poscov.globalCov = relative_cov_updatedV;
+
       }
       if(robot_id_received == "tb3_2" && _range(1)<5) {
         _globalP.block<15,45>(30,0) << receivedCov;
         // ROS_WARN("Relative Update tb2");
         // ROS_INFO("Range tb2: %.4f",_range(1));
         relativeUpdate();
+        ROS_INFO_STREAM("Relative Update Done " << robot_id_received);
+        res.result = 1;
+        res.poscov.robot_id.data = robot_name;
+
+        res.poscov.pose.orientation.x = relative_state_updated[0];
+        res.poscov.pose.orientation.y = relative_state_updated[1];
+        res.poscov.pose.orientation.z = relative_state_updated[2];
+        res.poscov.twist.x = relative_state_updated[3];
+        res.poscov.twist.y = relative_state_updated[4];
+        res.poscov.twist.z = relative_state_updated[5];
+        res.poscov.pose.position.x = relative_state_updated[6];
+        res.poscov.pose.position.y = relative_state_updated[7];
+        res.poscov.pose.position.z = relative_state_updated[8];
+        res.poscov.bias.linear.x = relative_state_updated[9];
+        res.poscov.bias.linear.y = relative_state_updated[10];
+        res.poscov.bias.linear.z = relative_state_updated[11];
+        res.poscov.bias.angular.x = relative_state_updated[12];
+        res.poscov.bias.angular.y = relative_state_updated[13];
+        res.poscov.bias.angular.z = relative_state_updated[14];
+        res.poscov.err_pose.orientation.x = relative_error_state_updated[0];
+        res.poscov.err_pose.orientation.y = relative_error_state_updated[1];
+        res.poscov.err_pose.orientation.z = relative_error_state_updated[2];
+        res.poscov.err_twist.x = relative_error_state_updated[3];
+        res.poscov.err_twist.y = relative_error_state_updated[4];
+        res.poscov.err_twist.z = relative_error_state_updated[5];
+        res.poscov.err_pose.position.x = relative_error_state_updated[6];
+        res.poscov.err_pose.position.y = relative_error_state_updated[7];
+        res.poscov.err_pose.position.z = relative_error_state_updated[8];
+        res.poscov.err_bias.linear.x = relative_error_state_updated[9];
+        res.poscov.err_bias.linear.y = relative_error_state_updated[10];
+        res.poscov.err_bias.linear.z = relative_error_state_updated[11];
+        res.poscov.err_bias.angular.x = relative_error_state_updated[12];
+        res.poscov.err_bias.angular.y = relative_error_state_updated[13];
+        res.poscov.err_bias.angular.z = relative_error_state_updated[14];
+
+        std::vector<double> relative_cov_updatedV(225);
+        int count=0;
+        for (int i = 0; i < 15; i++) {
+          for (int j = 0; j < 15; j++) {
+            relative_cov_updatedV[count]  = relative_cov_updated(i,j);
+            count++;
+          }
+        }
+
+        res.poscov.globalCov = relative_cov_updatedV;
       }
     }
     else if (robot_name=="tb3_1") {
@@ -900,12 +996,102 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
         // ROS_WARN("Relative Update tb0");
         // ROS_INFO("Range tb0: %.4f",_range(0));
         relativeUpdate();
+        ROS_INFO_STREAM("Relative Update Done " << robot_id_received);
+        res.result = 2;
+        res.poscov.robot_id.data = robot_name;
+
+        res.poscov.pose.orientation.x = relative_state_updated[0];
+        res.poscov.pose.orientation.y = relative_state_updated[1];
+        res.poscov.pose.orientation.z = relative_state_updated[2];
+        res.poscov.twist.x = relative_state_updated[3];
+        res.poscov.twist.y = relative_state_updated[4];
+        res.poscov.twist.z = relative_state_updated[5];
+        res.poscov.pose.position.x = relative_state_updated[6];
+        res.poscov.pose.position.y = relative_state_updated[7];
+        res.poscov.pose.position.z = relative_state_updated[8];
+        res.poscov.bias.linear.x = relative_state_updated[9];
+        res.poscov.bias.linear.y = relative_state_updated[10];
+        res.poscov.bias.linear.z = relative_state_updated[11];
+        res.poscov.bias.angular.x = relative_state_updated[12];
+        res.poscov.bias.angular.y = relative_state_updated[13];
+        res.poscov.bias.angular.z = relative_state_updated[14];
+        res.poscov.err_pose.orientation.x = relative_error_state_updated[0];
+        res.poscov.err_pose.orientation.y = relative_error_state_updated[1];
+        res.poscov.err_pose.orientation.z = relative_error_state_updated[2];
+        res.poscov.err_twist.x = relative_error_state_updated[3];
+        res.poscov.err_twist.y = relative_error_state_updated[4];
+        res.poscov.err_twist.z = relative_error_state_updated[5];
+        res.poscov.err_pose.position.x = relative_error_state_updated[6];
+        res.poscov.err_pose.position.y = relative_error_state_updated[7];
+        res.poscov.err_pose.position.z = relative_error_state_updated[8];
+        res.poscov.err_bias.linear.x = relative_error_state_updated[9];
+        res.poscov.err_bias.linear.y = relative_error_state_updated[10];
+        res.poscov.err_bias.linear.z = relative_error_state_updated[11];
+        res.poscov.err_bias.angular.x = relative_error_state_updated[12];
+        res.poscov.err_bias.angular.y = relative_error_state_updated[13];
+        res.poscov.err_bias.angular.z = relative_error_state_updated[14];
+
+        std::vector<double> relative_cov_updatedV(225);
+        int count=0;
+        for (int i = 0; i < 15; i++) {
+          for (int j = 0; j < 15; j++) {
+            relative_cov_updatedV[count]  = relative_cov_updated(i,j);
+            count++;
+          }
+        }
+
+        res.poscov.globalCov = relative_cov_updatedV;
       }
       if(robot_id_received == "tb3_2" && _range(1)<5) {
         _globalP.block<15,45>(30,0) << receivedCov;
         // ROS_WARN("Relative Update tb2");
         // ROS_INFO("Range tb2: %.4f",_range(1));
         relativeUpdate();
+        ROS_INFO_STREAM("Relative Update Done " << robot_id_received);
+        res.result = 2;
+        res.poscov.robot_id.data = robot_name;
+
+        res.poscov.pose.orientation.x = relative_state_updated[0];
+        res.poscov.pose.orientation.y = relative_state_updated[1];
+        res.poscov.pose.orientation.z = relative_state_updated[2];
+        res.poscov.twist.x = relative_state_updated[3];
+        res.poscov.twist.y = relative_state_updated[4];
+        res.poscov.twist.z = relative_state_updated[5];
+        res.poscov.pose.position.x = relative_state_updated[6];
+        res.poscov.pose.position.y = relative_state_updated[7];
+        res.poscov.pose.position.z = relative_state_updated[8];
+        res.poscov.bias.linear.x = relative_state_updated[9];
+        res.poscov.bias.linear.y = relative_state_updated[10];
+        res.poscov.bias.linear.z = relative_state_updated[11];
+        res.poscov.bias.angular.x = relative_state_updated[12];
+        res.poscov.bias.angular.y = relative_state_updated[13];
+        res.poscov.bias.angular.z = relative_state_updated[14];
+        res.poscov.err_pose.orientation.x = relative_error_state_updated[0];
+        res.poscov.err_pose.orientation.y = relative_error_state_updated[1];
+        res.poscov.err_pose.orientation.z = relative_error_state_updated[2];
+        res.poscov.err_twist.x = relative_error_state_updated[3];
+        res.poscov.err_twist.y = relative_error_state_updated[4];
+        res.poscov.err_twist.z = relative_error_state_updated[5];
+        res.poscov.err_pose.position.x = relative_error_state_updated[6];
+        res.poscov.err_pose.position.y = relative_error_state_updated[7];
+        res.poscov.err_pose.position.z = relative_error_state_updated[8];
+        res.poscov.err_bias.linear.x = relative_error_state_updated[9];
+        res.poscov.err_bias.linear.y = relative_error_state_updated[10];
+        res.poscov.err_bias.linear.z = relative_error_state_updated[11];
+        res.poscov.err_bias.angular.x = relative_error_state_updated[12];
+        res.poscov.err_bias.angular.y = relative_error_state_updated[13];
+        res.poscov.err_bias.angular.z = relative_error_state_updated[14];
+
+        std::vector<double> relative_cov_updatedV(225);
+        int count=0;
+        for (int i = 0; i < 15; i++) {
+          for (int j = 0; j < 15; j++) {
+            relative_cov_updatedV[count]  = relative_cov_updated(i,j);
+            count++;
+          }
+        }
+
+        res.poscov.globalCov = relative_cov_updatedV;
       }
     }
     else if (robot_name=="tb3_2") {
@@ -914,12 +1100,102 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
         // ROS_WARN("Relative Update tb0");
         // ROS_INFO("Range tb0: %.4f",_range(0));
         relativeUpdate();
+        ROS_INFO_STREAM("Relative Update Done " << robot_id_received);
+        res.result = 3;
+        res.poscov.robot_id.data = robot_name;
+
+        res.poscov.pose.orientation.x = relative_state_updated[0];
+        res.poscov.pose.orientation.y = relative_state_updated[1];
+        res.poscov.pose.orientation.z = relative_state_updated[2];
+        res.poscov.twist.x = relative_state_updated[3];
+        res.poscov.twist.y = relative_state_updated[4];
+        res.poscov.twist.z = relative_state_updated[5];
+        res.poscov.pose.position.x = relative_state_updated[6];
+        res.poscov.pose.position.y = relative_state_updated[7];
+        res.poscov.pose.position.z = relative_state_updated[8];
+        res.poscov.bias.linear.x = relative_state_updated[9];
+        res.poscov.bias.linear.y = relative_state_updated[10];
+        res.poscov.bias.linear.z = relative_state_updated[11];
+        res.poscov.bias.angular.x = relative_state_updated[12];
+        res.poscov.bias.angular.y = relative_state_updated[13];
+        res.poscov.bias.angular.z = relative_state_updated[14];
+        res.poscov.err_pose.orientation.x = relative_error_state_updated[0];
+        res.poscov.err_pose.orientation.y = relative_error_state_updated[1];
+        res.poscov.err_pose.orientation.z = relative_error_state_updated[2];
+        res.poscov.err_twist.x = relative_error_state_updated[3];
+        res.poscov.err_twist.y = relative_error_state_updated[4];
+        res.poscov.err_twist.z = relative_error_state_updated[5];
+        res.poscov.err_pose.position.x = relative_error_state_updated[6];
+        res.poscov.err_pose.position.y = relative_error_state_updated[7];
+        res.poscov.err_pose.position.z = relative_error_state_updated[8];
+        res.poscov.err_bias.linear.x = relative_error_state_updated[9];
+        res.poscov.err_bias.linear.y = relative_error_state_updated[10];
+        res.poscov.err_bias.linear.z = relative_error_state_updated[11];
+        res.poscov.err_bias.angular.x = relative_error_state_updated[12];
+        res.poscov.err_bias.angular.y = relative_error_state_updated[13];
+        res.poscov.err_bias.angular.z = relative_error_state_updated[14];
+
+        std::vector<double> relative_cov_updatedV(225);
+        int count=0;
+        for (int i = 0; i < 15; i++) {
+          for (int j = 0; j < 15; j++) {
+            relative_cov_updatedV[count]  = relative_cov_updated(i,j);
+            count++;
+          }
+        }
+
+        res.poscov.globalCov = relative_cov_updatedV;
       }
       if(robot_id_received == "tb3_1" && _range(1)<5) {
         _globalP.block<15,45>(15,0) << receivedCov;
         // ROS_WARN("Relative Update tb1");
         // ROS_INFO("Range tb1: %.4f",_range(1));
         relativeUpdate();
+        ROS_INFO_STREAM("Relative Update Done " << robot_id_received);
+        res.result = 3;
+        res.poscov.robot_id.data = robot_name;
+
+        res.poscov.pose.orientation.x = relative_state_updated[0];
+        res.poscov.pose.orientation.y = relative_state_updated[1];
+        res.poscov.pose.orientation.z = relative_state_updated[2];
+        res.poscov.twist.x = relative_state_updated[3];
+        res.poscov.twist.y = relative_state_updated[4];
+        res.poscov.twist.z = relative_state_updated[5];
+        res.poscov.pose.position.x = relative_state_updated[6];
+        res.poscov.pose.position.y = relative_state_updated[7];
+        res.poscov.pose.position.z = relative_state_updated[8];
+        res.poscov.bias.linear.x = relative_state_updated[9];
+        res.poscov.bias.linear.y = relative_state_updated[10];
+        res.poscov.bias.linear.z = relative_state_updated[11];
+        res.poscov.bias.angular.x = relative_state_updated[12];
+        res.poscov.bias.angular.y = relative_state_updated[13];
+        res.poscov.bias.angular.z = relative_state_updated[14];
+        res.poscov.err_pose.orientation.x = relative_error_state_updated[0];
+        res.poscov.err_pose.orientation.y = relative_error_state_updated[1];
+        res.poscov.err_pose.orientation.z = relative_error_state_updated[2];
+        res.poscov.err_twist.x = relative_error_state_updated[3];
+        res.poscov.err_twist.y = relative_error_state_updated[4];
+        res.poscov.err_twist.z = relative_error_state_updated[5];
+        res.poscov.err_pose.position.x = relative_error_state_updated[6];
+        res.poscov.err_pose.position.y = relative_error_state_updated[7];
+        res.poscov.err_pose.position.z = relative_error_state_updated[8];
+        res.poscov.err_bias.linear.x = relative_error_state_updated[9];
+        res.poscov.err_bias.linear.y = relative_error_state_updated[10];
+        res.poscov.err_bias.linear.z = relative_error_state_updated[11];
+        res.poscov.err_bias.angular.x = relative_error_state_updated[12];
+        res.poscov.err_bias.angular.y = relative_error_state_updated[13];
+        res.poscov.err_bias.angular.z = relative_error_state_updated[14];
+
+        std::vector<double> relative_cov_updatedV(225);
+        int count=0;
+        for (int i = 0; i < 15; i++) {
+          for (int j = 0; j < 15; j++) {
+            relative_cov_updatedV[count]  = relative_cov_updated(i,j);
+            count++;
+          }
+        }
+
+        res.poscov.globalCov = relative_cov_updatedV;
       }
     }
 
@@ -934,6 +1210,8 @@ void DekfSensorFusion::SendCovariance()
 {
 
   dekf_sensor_fusion::SrvCov srv_cov_share;
+
+//  REQUEST MESSAGE
 
   pose_.orientation.x = _x[0];
   pose_.orientation.y = _x[1];
@@ -1065,7 +1343,96 @@ void DekfSensorFusion::SendCovariance()
       // ROS_INFO("Range tb1: %.4f",_range(1));
     }
   }
-  std::cout << "P " << robot_name << ": \n" << _globalP << '\n';
+
+
+//  RESPONSE MESSAGE
+
+  double response_flag = srv_cov_share.response.result;
+  // std::cout << "Resonse_flag: " << response_flag << "\n";
+
+  if (response_flag == 1 || response_flag == 2 || response_flag == 3) {
+
+    std::string neighbour_update;
+    neighbour_update = srv_cov_share.response.poscov.robot_id.data;
+
+    state_response << srv_cov_share.response.poscov.pose.orientation.x, srv_cov_share.response.poscov.pose.orientation.y, srv_cov_share.response.poscov.pose.orientation.z,
+                    srv_cov_share.response.poscov.twist.x, srv_cov_share.response.poscov.twist.y, srv_cov_share.response.poscov.twist.z,
+                    srv_cov_share.response.poscov.pose.position.x, srv_cov_share.response.poscov.pose.position.y, srv_cov_share.response.poscov.pose.position.z,
+                    srv_cov_share.response.poscov.bias.linear.x, srv_cov_share.response.poscov.bias.linear.y, srv_cov_share.response.poscov.bias.linear.z,
+                    srv_cov_share.response.poscov.bias.angular.x, srv_cov_share.response.poscov.bias.angular.y, srv_cov_share.response.poscov.bias.angular.z;
+    error_state_response << srv_cov_share.response.poscov.err_pose.orientation.x, srv_cov_share.response.poscov.err_pose.orientation.y, srv_cov_share.response.poscov.err_pose.orientation.z,
+                       srv_cov_share.response.poscov.err_twist.x, srv_cov_share.response.poscov.err_twist.y, srv_cov_share.response.poscov.err_twist.z,
+                       srv_cov_share.response.poscov.err_pose.position.x, srv_cov_share.response.poscov.err_pose.position.y, srv_cov_share.response.poscov.err_pose.position.z,
+                       srv_cov_share.response.poscov.err_bias.linear.x, srv_cov_share.response.poscov.err_bias.linear.y, srv_cov_share.response.poscov.err_bias.linear.z,
+                       srv_cov_share.response.poscov.err_bias.angular.x, srv_cov_share.response.poscov.err_bias.angular.y, srv_cov_share.response.poscov.err_bias.angular.z;
+
+    //  _x = state_response;
+    // _error_states = error_state_response;
+
+    MatrixXd responseCov(15,15);
+    int count=0;
+    for (int i = 0; i < 15; i++) {
+      for (int j = 0; j < 15; j++) {
+        responseCov(i,j) = srv_cov_share.response.poscov.globalCov[count];
+        count++;
+      }
+    }
+
+   if (robot_name=="tb3_0")
+   {
+     if (neighbour_update == "tb3_1") {
+       // _globalP.block<15,15>(0,30) = responseCov * _P.inverse() * _globalP.block<15,15>(0,30);
+       // _P = responseCov;
+       // _globalP.block<15,15>(0,0) = _P;
+       _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
+       ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
+     }
+     else if (neighbour_update == "tb3_2") {
+       // _globalP.block<15,15>(0,15) = responseCov * _P.inverse() * _globalP.block<15,15>(0,15);
+       // _P = responseCov;
+       // _globalP.block<15,15>(0,0) = _P;
+       _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
+       ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
+     }
+   }
+   else if (robot_name=="tb3_1")
+   {
+     if (neighbour_update == "tb3_0") {
+       // _globalP.block<15,15>(15,30) = responseCov * _P.inverse() * _globalP.block<15,15>(15,30);
+       // _P = responseCov;
+       // _globalP.block<15,15>(15,15) = _P;
+       _globalP.block<15,15>(15,0) = Eigen::MatrixXd::Identity(15,15);
+       ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
+     }
+     else if (neighbour_update == "tb3_2") {
+       // _globalP.block<15,15>(15,0) = responseCov * _P.inverse() * _globalP.block<15,15>(15,0);
+       // _P = responseCov;
+       // _globalP.block<15,15>(15,15) = _P;
+       _globalP.block<15,15>(15,30) = Eigen::MatrixXd::Identity(15,15);
+       ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
+     }
+   }
+   else if (robot_name=="tb3_2") {
+     if (neighbour_update == "tb3_0") {
+       // _globalP.block<15,15>(30,15) = responseCov * _P.inverse() * _globalP.block<15,15>(30,15);
+       // _P = responseCov;
+       // _globalP.block<15,15>(30,30) = _P;
+       _globalP.block<15,15>(30,0) = Eigen::MatrixXd::Identity(15,15);
+       ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
+     }
+     else if (neighbour_update == "tb3_1") {
+       // _globalP.block<15,15>(30,0) = responseCov * _P.inverse() * _globalP.block<15,15>(30,0);
+       // _P = responseCov;
+       // _globalP.block<15,15>(30,30) = _P;
+       _globalP.block<15,15>(30,15) = Eigen::MatrixXd::Identity(15,15);
+       ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
+     }
+   }
+
+  }
+
+  std::cout << "P:\n" << _globalP << '\n';
+
 }
 //
 // INITIALIZATION FORMULAS
@@ -1704,7 +2071,7 @@ int main(int argc, char **argv)
     // ros::spinOnce();
     rate.sleep(); //TODO make sure if it affects the AsyncSpinner or not
     counter++;
-
+    ROS_INFO("------------------");
   }
   return 0;
 }

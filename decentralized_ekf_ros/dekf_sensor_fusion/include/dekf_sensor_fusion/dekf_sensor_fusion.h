@@ -46,6 +46,10 @@ public:
   Eigen::Matrix <double, 3, 1>  odom_command_1;
   Eigen::Matrix <double, 3, 1>  odom_command_2;
   Eigen::Matrix <double, 15, 1>  error_state_updated;
+  Eigen::Matrix <double, 15, 1> relative_error_state_updated;
+  Eigen::Matrix <double, 15, 1> relative_state_updated;
+  Eigen::Matrix <double, 15, 1> error_state_response;
+  Eigen::Matrix <double, 15, 1> state_response;
   Eigen::Matrix <double, 2, 1>  _range;
   Eigen::Matrix <double, 2, 1>  range_to_drone;
   // Eigen::Matrix <double, 15, 15>  range_cov;
@@ -65,6 +69,8 @@ public:
   Eigen::Matrix <double, 15, 15> sigma_ji;
   Eigen::Matrix <double, 15, 1> _error_states;
   Eigen::Matrix <double, 45, 45> _globalP;
+  Eigen::Matrix <double, 15, 15> relative_cov_updated;
+
   typedef Eigen::Matrix<double, 15, 1> Vector15;
   typedef Eigen::Matrix<double, 3, 1> Vector3;
   Vector3d V_old;
