@@ -212,7 +212,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -221,7 +221,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -230,7 +230,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0 && abs(odom_command_2(0))<0.001 && abs(odom_command_2(1))<0.001 && abs(odom_command_2(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -295,15 +295,15 @@ void DekfSensorFusion::gpsCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
     if (robot_name=="tb3_0")
     {
-      degradation = 1-(sqrt(pow(true_position0(0)-(-7),2)+pow(true_position0(1)-(0),2)))/7;
+      degradation = 1-(sqrt(pow(true_position0(0)-(10),2)+pow(true_position0(1)-(0),2)))/10;
     }
     else if (robot_name=="tb3_1")
     {
-      degradation = 1-(sqrt(pow(true_position1(0)-(-7),2)+pow(true_position1(1)-(0),2)))/7;
+      degradation = 1-(sqrt(pow(true_position1(0)-(10),2)+pow(true_position1(1)-(0),2)))/10;
     }
     else if (robot_name=="tb3_2")
     {
-      degradation = 1-(sqrt(pow(true_position2(0)-(-7),2)+pow(true_position2(1)-(0),2)))/7;
+      degradation = 1-(sqrt(pow(true_position2(0)-(10),2)+pow(true_position2(1)-(0),2)))/10;
     }
 
     if (degradation < 0) {

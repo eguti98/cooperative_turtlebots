@@ -52,19 +52,36 @@ class DrawALine:
                 rospy.loginfo('Going Straight')
                 for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
-
+                    # if (x == 80 or x == 160):
+                        # # ZUPT
+                        # rospy.loginfo('Zupt')
+                        # for y in range(0,20):
+                        #     self.cmd_vel.publish(stop_cmd)
+                        #     r.sleep()
                     r.sleep()
             elif robot == "tb3_1":
                 # FORWARD
                 rospy.loginfo('Going Straight')
                 for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
+                    # if (x == 80 or x == 160):
+                        # # ZUPT
+                        # rospy.loginfo('Zupt')
+                        # for y in range(0,20):
+                        #     self.cmd_vel.publish(stop_cmd)
+                        #     r.sleep()
                     r.sleep()
             elif robot == "tb3_2":
                 # FORWARD
                 rospy.loginfo('Going Straight')
                 for x in range(0, 500):
                     self.cmd_vel.publish(move_cmd)
+                    # if (x == 160 or x == 320):
+                        # # ZUPT
+                        # rospy.loginfo('Zupt')
+                        # for y in range(0,20):
+                        #     self.cmd_vel.publish(stop_cmd)
+                        #     r.sleep()
                     r.sleep()
         # STOP
             rospy.loginfo('Stopping')
