@@ -499,52 +499,52 @@ void DekfSensorFusion::relativeUpdate()
     }
     errorb = sqrt(pow((true_position1(0)-_x(6)),2)+pow((-true_position1(1)-_x(7)),2)+pow((-true_position1(2)-_x(8)),2));
   }
-  // else if (robot_name=="tb3_2")
-  // {
-  //   if (robot_id_received=="tb3_0")
-  //   {
-  //     P_d1 = _globalP.block<15,15>(0,0);        //Sigma_ii
-  //     P_d12 = _globalP.block<15,15>(0,30);      //Sigma_ij
-  //     P_d21 = _globalP.block<15,15>(30,0);      //Sigma_ji
-  //     P_d2 = _globalP.block<15,15>(30,30);      //Sigma_jj
-  //     P_corr = P_d21 * P_d12.transpose();
-  //     P_corr2 = P_corr.transpose();
-  //
-  //     covariances.block<15,15>(0,0) = P_d1;
-  //     covariances.block<15,15>(15,0) = P_corr;
-  //     covariances.block<15,15>(0,15) = P_corr2;
-  //     covariances.block<15,15>(15,15) = P_d2;
-  //
-  //     state1 = state_received;                   // Total state
-  //     err_state1 = err_state_received;           // Error state
-  //     state2 = _x;                               // Total state received
-  //     err_state2 = _error_states;                // Error state received
-  //
-  //     range_update = _range(0);
-  //   }
-  //   else if (robot_id_received=="tb3_1")
-  //   {
-  //     P_d1 = _globalP.block<15,15>(15,15);       //Sigma_ii
-  //     P_d12 = _globalP.block<15,15>(15,30);      //Sigma_ij
-  //     P_d21 = _globalP.block<15,15>(30,15);      //Sigma_ji
-  //     P_d2 = _globalP.block<15,15>(30,30);       //Sigma_jj
-  //     P_corr = P_d21 * P_d12.transpose();
-  //     P_corr2 = P_corr.transpose();
-  //
-  //     covariances.block<15,15>(0,0) = P_d1;
-  //     covariances.block<15,15>(0,15) = P_corr2;
-  //     covariances.block<15,15>(15,0) = P_corr;
-  //     covariances.block<15,15>(15,15) = P_d2;
-  //
-  //     state1 = state_received;                   // Total state
-  //     err_state1 = err_state_received;           // Error state
-  //     state2 = _x;                               // Total state received
-  //     err_state2 = _error_states;                // Error state received
-  //
-  //     range_update = _range(1);
-  //   }
-  //   errorb = sqrt(pow((true_position2(0)-_x(6)),2)+pow((-true_position2(1)-_x(7)),2)+pow((-true_position2(2)-_x(8)),2));
-  // }
+  else if (robot_name=="tb3_2")
+  {
+    if (robot_id_received=="tb3_0")
+    {
+      P_d1 = _globalP.block<15,15>(0,0);        //Sigma_ii
+      P_d12 = _globalP.block<15,15>(0,30);      //Sigma_ij
+      P_d21 = _globalP.block<15,15>(30,0);      //Sigma_ji
+      P_d2 = _globalP.block<15,15>(30,30);      //Sigma_jj
+      P_corr = P_d21 * P_d12.transpose();
+      P_corr2 = P_corr.transpose();
+
+      covariances.block<15,15>(0,0) = P_d1;
+      covariances.block<15,15>(15,0) = P_corr;
+      covariances.block<15,15>(0,15) = P_corr2;
+      covariances.block<15,15>(15,15) = P_d2;
+
+      state1 = state_received;                   // Total state
+      err_state1 = err_state_received;           // Error state
+      state2 = _x;                               // Total state received
+      err_state2 = _error_states;                // Error state received
+
+      range_update = _range(0);
+    }
+    // else if (robot_id_received=="tb3_1")
+    // {
+    //   P_d1 = _globalP.block<15,15>(15,15);       //Sigma_ii
+    //   P_d12 = _globalP.block<15,15>(15,30);      //Sigma_ij
+    //   P_d21 = _globalP.block<15,15>(30,15);      //Sigma_ji
+    //   P_d2 = _globalP.block<15,15>(30,30);       //Sigma_jj
+    //   P_corr = P_d21 * P_d12.transpose();
+    //   P_corr2 = P_corr.transpose();
+    //
+    //   covariances.block<15,15>(0,0) = P_d1;
+    //   covariances.block<15,15>(0,15) = P_corr2;
+    //   covariances.block<15,15>(15,0) = P_corr;
+    //   covariances.block<15,15>(15,15) = P_d2;
+    //
+    //   state1 = state_received;                   // Total state
+    //   err_state1 = err_state_received;           // Error state
+    //   state2 = _x;                               // Total state received
+    //   err_state2 = _error_states;                // Error state received
+    //
+    //   range_update = _range(1);
+    // }
+    // errorb = sqrt(pow((true_position2(0)-_x(6)),2)+pow((-true_position2(1)-_x(7)),2)+pow((-true_position2(2)-_x(8)),2));
+  }
   // // std::cout << "Covariances "<< robot_name << ": \n" << covariances << '\n';
   //
   states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
@@ -574,7 +574,7 @@ void DekfSensorFusion::relativeUpdate()
   if (abs(res_range) > 200.0)
   {
   //     // ROS_INFO("------------");
-      ROS_WARN("Relative Update Ignored");
+      ROS_WARN_STREAM(robot_name<<": Relative Update Ignored");
   //     // ROS_INFO_STREAM("Range "<< robot_id_received << ": " << range_update);
   //     // ROS_INFO("------------");
   //     /* Perform Zupt? */
@@ -799,47 +799,67 @@ void DekfSensorFusion::relativeUpdate()
       }
       // errora = sqrt(pow((true_position1(0)-_pos(0)),2)+pow((-true_position1(1)-_pos(1)),2)+pow((-true_position1(2)-_pos(2)),2));
     }
-  //   else if (robot_name=="tb3_2")
-  //   {
-  //     if (robot_id_received=="tb3_0")
-  //     {
-  //
-  //       error_state_updated = err_states.segment(15,15);
-  //
-  //       Matrix3d Cnb = _euler2dcmV(state2(0),state2(1),state2(2));
-  //       Matrix3d Cbn = Cnb.transpose();
-  //
-  //       _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)+ _skewsym(error_state_updated.segment(0,3)))*Cbn);
-  //       _vel(0) = state2(3)+ error_state_updated(3);
-  //       _vel(1) = state2(4)+ error_state_updated(4);
-  //       _vel(2) = state2(5)+ error_state_updated(5);
-  //       _pos(0) = state2(6)+ error_state_updated(6);
-  //       _pos(1) = state2(7)+ error_state_updated(7);
-  //       _pos(2) = state2(8)+ error_state_updated(8);
-  //       ba(0) =  error_state_updated(9);
-  //       ba(1) =  error_state_updated(10);
-  //       ba(2) =  error_state_updated(11);
-  //       bg(0) =  error_state_updated(12);
-  //       bg(1) =  error_state_updated(13);
-  //       bg(2) =  error_state_updated(14);
-  //       err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
-  //
-  //       _error_states<<err_states.segment(15,15);
-  //
-  //       // _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*_P.inverse()*_globalP.block<15,15>(30,15);
-  //       _P = covariances.block<15,15>(15,15);
-  //       // _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,0);
-  //       // _globalP.block<15,15>(30,0) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,15))*_globalP.block<15,15>(30,0) - K_range.block<15,1>(15,0)*H_range.block<1,15>(0,0)*P_d1;
-  //       _globalP.block<15,15>(30,0) = Eigen::MatrixXd::Identity(15,15);
-  //       _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
-  //       _globalP.block<15,15>(30,15) = covariances.block<15,15>(15,15)*P_d2.inverse()*_globalP.block<15,15>(30,15);
-  //
-  //       relative_update_done = 1;
-  //       // ROS_WARN("Relative Update Done");
-  //       // ROS_INFO_STREAM("Range tb0: " << range_update);
-  //       // error = sqrt(pow((true_position1(0)-_x(6)),2)+pow((true_position1(1)-_x(7)),2)+pow((true_position1(2)-_x(8)),2));
-  //       // ROS_INFO("Error: %.4f",error);
-  //     }
+    else if (robot_name=="tb3_2")
+    {
+      if (robot_id_received=="tb3_0")
+      {
+
+        // MY UPDATE
+        error_state_updated_1 = err_states.segment(15,15);
+        Matrix3d Cnb_1 = _euler2dcmV(state2(0),state2(1),state2(2));
+        Matrix3d Cbn_1 = Cnb_1.transpose();
+        _attitude = _dcm2euler((Eigen::MatrixXd::Identity(3,3)+ _skewsym(error_state_updated_1.segment(0,3)))*Cbn_1);
+        _vel(0) = state2(3)+ error_state_updated_1(3);
+        _vel(1) = state2(4)+ error_state_updated_1(4);
+        _vel(2) = state2(5)+ error_state_updated_1(5);
+        _pos(0) = state2(6)+ error_state_updated_1(6);
+        _pos(1) = state2(7)+ error_state_updated_1(7);
+        _pos(2) = state2(8)+ error_state_updated_1(8);
+        ba(0) =  error_state_updated_1(9);
+        ba(1) =  error_state_updated_1(10);
+        ba(2) =  error_state_updated_1(11);
+        bg(0) =  error_state_updated_1(12);
+        bg(1) =  error_state_updated_1(13);
+        bg(2) =  error_state_updated_1(14);
+        err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
+        _error_states<<err_states.segment(15,15);
+
+        _P = covariances.block<15,15>(15,15);
+        _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
+        // _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,0))*_globalP.block<15,15>(0,15) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,15)*P_d1;
+        // _globalP.block<15,15>(0,15) = Eigen::MatrixXd::Identity(15,15);
+        _globalP.block<15,15>(30,0) = covariances.block<15,15>(15,0);
+        _globalP.block<15,15>(30,15) = covariances.block<15,15>(0,0)*P_d2.inverse()*_globalP.block<15,15>(30,15);
+
+        // OTHERS UPDATE
+
+        error_state_updated_2 = err_states.segment(0,15);
+        Matrix3d Cnb_2 = _euler2dcmV(state1(0),state1(1),state1(2));
+        Matrix3d Cbn_2 = Cnb_2.transpose();
+        relative_state_updated.segment(0,3) = _dcm2euler((Eigen::MatrixXd::Identity(3,3)+ _skewsym(error_state_updated_2.segment(0,3)))*Cbn_2);
+        relative_state_updated(3) = state1(3)+ error_state_updated_2(3);
+        relative_state_updated(4) = state1(4)+ error_state_updated_2(4);
+        relative_state_updated(5) = state1(5)+ error_state_updated_2(5);
+        relative_state_updated(6) = state1(6)+ error_state_updated_2(6);
+        relative_state_updated(7) = state1(7)+ error_state_updated_2(7);
+        relative_state_updated(8) = state1(8)+ error_state_updated_2(8);
+        relative_state_updated(9) =  error_state_updated_2(9);
+        relative_state_updated(10) =  error_state_updated_2(10);
+        relative_state_updated(11) =  error_state_updated_2(11);
+        relative_state_updated(12) =  error_state_updated_2(12);
+        relative_state_updated(13) =  error_state_updated_2(13);
+        relative_state_updated(14) =  error_state_updated_2(14);
+        err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
+        relative_error_state_updated<<err_states.segment(0,15);
+
+        // std::cout << "BEFORE UPD TOTAL STATE \n" << state2 <<'\n';
+        // std::cout << "AFTER UPD ERROR STATE \n" << err_states.segment(15,15) <<'\n';
+        // std::cout << "AFTER UPD TOTAL STATE \n" << relative_state_updated <<'\n';
+        relative_cov_updated = covariances.block<15,15>(0,0);
+
+        relative_update_done = 1;
+
+      }
   //     else if (robot_id_received=="tb3_1")
   //     {
   //       error_state_updated = err_states.segment(15,15);
@@ -878,24 +898,9 @@ void DekfSensorFusion::relativeUpdate()
   //       // ROS_INFO("Error: %.4f",error);
   //     }
   //     errora = sqrt(pow((true_position2(0)-_pos(0)),2)+pow((-true_position2(1)-_pos(1)),2)+pow((-true_position2(2)-_pos(2)),2));
-  //   }
-  //
-  //   if (errora>100) {
-  //     ROS_WARN_STREAM("Good Relative Update: " << robot_name << " & "<< robot_id_received);
-  //     ROS_INFO("Error before: %.4f",errorb);
-  //     ROS_INFO("Error after: %.4f",errora);
-  //   }
-  //   // else if (errora > errorb) {
-  //   //   ROS_ERROR_STREAM("Wrong Relative Update: " << robot_name << " & "<< robot_id_received);
-  //   //   ROS_INFO("Error before: %.4f",errorb);
-  //   //   ROS_INFO("Error after: %.4f",errora);
-  //   // }
-  //   // else if (abs(errora-errorb) > 1) {
-  //   //   ROS_INFO("--------");
-  //   //   ROS_WARN("???");
-  //   //   ROS_INFO("--------");
-  //   // }
-  //
+    }
+
+    ROS_INFO_STREAM(robot_name << ": Relative Update Done");
   }
 
   // // std::cout << "Global P " << robot_name << ": \n" << _globalP <<'\n';
@@ -1097,7 +1102,7 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
         // ROS_WARN("Relative Update tb2");
         // ROS_INFO("Range tb2: %.4f",_range(1));
         relativeUpdate();
-        ROS_INFO_STREAM(robot_name << ": Relative Update Done");
+        // ROS_INFO_STREAM(robot_name << ": Relative Update Done");
         res.result = 1;
         res.poscov.robot_id.data = robot_name;
 
@@ -1146,12 +1151,12 @@ bool DekfSensorFusion::calculation(dekf_sensor_fusion::SrvCov::Request &req , de
       }
     }
     else if (robot_name=="tb3_2") {
-      if (robot_id_received == "tb3_0" && _range(0)<5) {
+      if (robot_id_received == "tb3_0") {
         _globalP.block<15,45>(0,0) << receivedCov;
         // ROS_WARN("Relative Update tb0");
         // ROS_INFO("Range tb0: %.4f",_range(0));
         relativeUpdate();
-        ROS_INFO_STREAM(robot_name << ": Relative Update Done");
+        // ROS_INFO_STREAM(robot_name << ": Relative Update Done");
         res.result = 1;
         res.poscov.robot_id.data = robot_name;
 
@@ -1453,11 +1458,11 @@ void DekfSensorFusion::SendCovariance()
    //     ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
    //   }
    //   else if (neighbour_update == "tb3_2") {
-       // _globalP.block<15,15>(0,15) = responseCov * _P.inverse() * _globalP.block<15,15>(0,15);
-       // _P = responseCov;
-       // _globalP.block<15,15>(0,0) = _P;
-       // _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
-       // ROS_INFO_STREAM(robot_name << ": Response for Update - Pose Received");
+       _globalP.block<15,15>(0,15) = responseCov * _P.inverse() * _globalP.block<15,15>(0,15);
+       _P = responseCov;
+       _globalP.block<15,15>(0,0) = _P;
+       _globalP.block<15,15>(0,30) = Eigen::MatrixXd::Identity(15,15);
+       ROS_INFO_STREAM(robot_name << ": Response for Update - Pose Received");
    //     ROS_INFO_STREAM("Relative Update Received " << neighbour_update);
    //   }
    }
@@ -1467,7 +1472,7 @@ void DekfSensorFusion::SendCovariance()
      _P = responseCov;
      _globalP.block<15,15>(15,15) = _P;
      _globalP.block<15,15>(15,0) = Eigen::MatrixXd::Identity(15,15);
-     // ROS_INFO_STREAM(robot_name << ": Response for Update - Pose Received");
+     ROS_INFO_STREAM(robot_name << ": Response for Update - Pose Received");
    }
    else if (robot_name=="tb3_2")
    {
@@ -1475,7 +1480,7 @@ void DekfSensorFusion::SendCovariance()
      _P = responseCov;
      _globalP.block<15,15>(30,30) = _P;
      _globalP.block<15,15>(30,15) = Eigen::MatrixXd::Identity(15,15);
-     // ROS_INFO_STREAM(robot_name << ": Response for Update - Pose Received");
+     ROS_INFO_STREAM(robot_name << ": Response for Update - Pose Received");
    }
 
   }
