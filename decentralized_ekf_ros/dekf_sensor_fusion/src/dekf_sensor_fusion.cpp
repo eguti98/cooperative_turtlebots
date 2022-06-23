@@ -212,7 +212,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -221,7 +221,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -230,7 +230,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0 && abs(odom_command_2(0))<0.001 && abs(odom_command_2(1))<0.001 && abs(odom_command_2(2))<0.01) {
-      // zeroUpdate();
+      zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -2101,7 +2101,7 @@ int main(int argc, char **argv)
         // ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(0));
         // ROS_ERROR_STREAM("Out of Range tb2");
         // ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
-        if (dekf_sensor_fusion._range(1) < 5.0)
+        if (dekf_sensor_fusion._range(1) < 3)
         {
           dekf_sensor_fusion.SendCovariance(); // REQUEST UPDATE FROM DRONE 3
         }
@@ -2116,7 +2116,7 @@ int main(int argc, char **argv)
         // ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
         // ROS_ERROR_STREAM("Out of Range tb2");
         // ROS_INFO("Range tb2: %.4f",dekf_sensor_fusion._range(1));
-        if (dekf_sensor_fusion._range(0) < 5.0)
+        if (dekf_sensor_fusion._range(0) < 3)
         {
           dekf_sensor_fusion.SendCovariance(); // REQUEST UPDATE FROM DRONE 1
         }
@@ -2131,7 +2131,7 @@ int main(int argc, char **argv)
         // ROS_INFO("Range tb0: %.4f",dekf_sensor_fusion._range(0));
         // ROS_ERROR_STREAM("Out of Range tb1");
         // ROS_INFO("Range tb1: %.4f",dekf_sensor_fusion._range(1));
-        if (dekf_sensor_fusion._range(1) < 5.0)
+        if (dekf_sensor_fusion._range(1) < 3)
         {
           dekf_sensor_fusion.SendCovariance(); // REQUEST UPDATE FROM DRONE 2
         }
