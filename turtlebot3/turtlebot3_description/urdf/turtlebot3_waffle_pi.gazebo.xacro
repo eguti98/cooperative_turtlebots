@@ -82,11 +82,26 @@
   </gazebo>
 
   <gazebo>
-    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+    <plugin name="imu_controller" filename="libhector_gazebo_ros_imu.so">
+      <robotNamespace>$(arg robot_namespace)</robotNamespace>
+      <frameId>$(arg tfpre)/base_link</frameId>
+      <updateRate>100.0</updateRate>
+      <bodyName>base_link</bodyName>
+      <topicName>imu</topicName>
+      <accelDrift>0.005 0.005 0.005</accelDrift>
+      <accelGaussianNoise>0.005 0.005 0.005</accelGaussianNoise>
+      <rateDrift>0.005 0.005 0.005 </rateDrift>
+      <rateGaussianNoise>0.005 0.005 0.005 </rateGaussianNoise>
+      <headingDrift>0.005</headingDrift>
+      <headingGaussianNoise>0.005</headingGaussianNoise>
+    </plugin>
+    <!-- <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+      <robotNamespace>$(arg robot_namespace)</robotNamespace>
       <alwaysOn>true</alwaysOn>
       <bodyName>imu_link</bodyName>
+      <linkName>$(arg robot_namespace)/imu_link</linkName>
       <frameName>imu_link</frameName>
-      <topicName>imu</topicName>
+      <topicName>$(arg robot_namespace)/imu/data</topicName>
       <serviceName>imu_service</serviceName>
       <gaussianNoise>0.0</gaussianNoise>
       <updateRate>100</updateRate>
@@ -107,8 +122,9 @@
           </accel>
         </noise>
       </imu>
-    </plugin>
+    </plugin> -->
   </gazebo>
+
 
   <gazebo reference="base_scan">
     <material>Gazebo/FlatBlack</material>

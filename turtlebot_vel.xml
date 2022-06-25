@@ -285,62 +285,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_0/truth</topic>
-                                    <type>nav_msgs/Odometry</type>
-                                </x_axis>
-                                <y_axis>
-                                    <field>twist/twist/linear/z</field>
-                                    <field_type>0</field_type>
-                                    <scale>
-                                        <absolute_maximum>1000</absolute_maximum>
-                                        <absolute_minimum>0</absolute_minimum>
-                                        <relative_maximum>0</relative_maximum>
-                                        <relative_minimum>-1000</relative_minimum>
-                                        <type>0</type>
-                                    </scale>
-                                    <topic>/tb3_0/truth</topic>
-                                    <type>nav_msgs/Odometry</type>
-                                </y_axis>
-                            </axes>
-                            <color>
-                                <custom_color>#000000</custom_color>
-                                <type>0</type>
-                            </color>
-                            <data>
-                                <circular_buffer_capacity>1000</circular_buffer_capacity>
-                                <time_frame_length>10</time_frame_length>
-                                <type>0</type>
-                            </data>
-                            <style>
-                                <lines_interpolate>false</lines_interpolate>
-                                <pen_style>1</pen_style>
-                                <pen_width>1</pen_width>
-                                <render_antialias>false</render_antialias>
-                                <steps_invert>false</steps_invert>
-                                <sticks_baseline>0</sticks_baseline>
-                                <sticks_orientation>2</sticks_orientation>
-                                <type>0</type>
-                            </style>
-                            <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>TRUTH Z</title>
-                        </curve_0>
-                        <curve_1>
-                            <axes>
-                                <x_axis>
-                                    <field>twist/twist/linear/z</field>
-                                    <field_type>1</field_type>
-                                    <scale>
-                                        <absolute_maximum>1000</absolute_maximum>
-                                        <absolute_minimum>0</absolute_minimum>
-                                        <relative_maximum>0</relative_maximum>
-                                        <relative_minimum>-1000</relative_minimum>
-                                        <type>0</type>
-                                    </scale>
                                     <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/twist/linear/z</field>
+                                    <field>twist/covariance/21</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -374,7 +323,109 @@
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>ESTIMATED Z</title>
+                        </curve_0>
+                        <curve_1>
+                            <axes>
+                                <x_axis>
+                                    <field>twist/twist/linear/z</field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
+                                    <type>nav_msgs/Odometry</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>pose/covariance/18</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
+                                    <type>nav_msgs/Odometry</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#000000</custom_color>
+                                <type>0</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>2</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>Copy of ESTIMATED Z</title>
                         </curve_1>
+                        <curve_2>
+                            <axes>
+                                <x_axis>
+                                    <field>angular_velocity/z</field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_0/imu</topic>
+                                    <type>sensor_msgs/Imu</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>angular_velocity/z</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_0/imu</topic>
+                                    <type>sensor_msgs/Imu</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#000000</custom_color>
+                                <type>0</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>Untitled Curve</title>
+                        </curve_2>
                     </curves>
                     <legend>
                         <visible>true</visible>
@@ -662,11 +713,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_1/truth</topic>
+                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/twist/linear/z</field>
+                                    <field>twist/covariance/24</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -675,7 +726,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_1/truth</topic>
+                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </y_axis>
                             </axes>
@@ -691,7 +742,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>1</pen_width>
+                                <pen_width>2</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -699,7 +750,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>TRUTH Z</title>
+                            <title>Copy of ESTIMATED Z</title>
                         </curve_0>
                         <curve_1>
                             <axes>
@@ -717,7 +768,7 @@
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/twist/linear/z</field>
+                                    <field>pose/covariance/18</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -750,8 +801,59 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>ESTIMATED Z</title>
+                            <title>Copy of Copy of ESTIMATED Z</title>
                         </curve_1>
+                        <curve_2>
+                            <axes>
+                                <x_axis>
+                                    <field>angular_velocity/z</field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_0/imu</topic>
+                                    <type>sensor_msgs/Imu</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>angular_velocity/z</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_0/imu</topic>
+                                    <type>sensor_msgs/Imu</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#000000</custom_color>
+                                <type>0</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>Untitled Curve</title>
+                        </curve_2>
                     </curves>
                     <legend>
                         <visible>true</visible>
@@ -1039,11 +1141,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_2/truth</topic>
+                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/twist/linear/z</field>
+                                    <field>twist/covariance/27</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -1052,7 +1154,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/tb3_2/truth</topic>
+                                    <topic>/tb3_0/localization/odometry/sensor_fusion</topic>
                                     <type>nav_msgs/Odometry</type>
                                 </y_axis>
                             </axes>
@@ -1068,7 +1170,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>1</pen_width>
+                                <pen_width>2</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -1076,7 +1178,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>TRUTH Z</title>
+                            <title>ESTIMATED Z</title>
                         </curve_0>
                         <curve_1>
                             <axes>
@@ -1094,7 +1196,7 @@
                                     <type>nav_msgs/Odometry</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>twist/twist/linear/z</field>
+                                    <field>pose/covariance/18</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -1127,8 +1229,59 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>ESTIMATED Z</title>
+                            <title>Copy of ESTIMATED Z</title>
                         </curve_1>
+                        <curve_2>
+                            <axes>
+                                <x_axis>
+                                    <field>angular_velocity/z</field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_2/imu</topic>
+                                    <type>sensor_msgs/Imu</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>angular_velocity/z</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/tb3_2/imu</topic>
+                                    <type>sensor_msgs/Imu</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#000000</custom_color>
+                                <type>0</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>Copy of Untitled Curve</title>
+                        </curve_2>
                     </curves>
                     <legend>
                         <visible>true</visible>

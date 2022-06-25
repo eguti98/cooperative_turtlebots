@@ -52,36 +52,36 @@ class DrawALine:
                 rospy.loginfo('Going Straight')
                 for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
-                    if (x == 50 or x == 100 or x == 150 or x == 200):
-                        # ZUPT
-                        rospy.loginfo('Zupt')
-                        for y in range(0,20):
-                            self.cmd_vel.publish(stop_cmd)
-                            r.sleep()
+                    # if (x == 50 or x == 100 or x == 150 or x == 200):
+                    #     # ZUPT
+                    #     rospy.loginfo('Zupt')
+                    #     for y in range(0,20):
+                    #         self.cmd_vel.publish(stop_cmd)
+                    #         r.sleep()
                     r.sleep()
             elif robot == "tb3_1":
                 # FORWARD
                 rospy.loginfo('Going Straight')
                 for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
-                    if (x == 50 or x == 100 or x == 150 or x == 200):
-                        # ZUPT
-                        rospy.loginfo('Zupt')
-                        for y in range(0,20):
-                            self.cmd_vel.publish(stop_cmd)
-                            r.sleep()
+                    # if (x == 50 or x == 100 or x == 150 or x == 200):
+                    #     # ZUPT
+                    #     rospy.loginfo('Zupt')
+                    #     for y in range(0,20):
+                    #         self.cmd_vel.publish(stop_cmd)
+                    #         r.sleep()
                     r.sleep()
             elif robot == "tb3_2":
                 # FORWARD
                 rospy.loginfo('Going Straight')
                 for x in range(0, 500):
                     self.cmd_vel.publish(move_cmd)
-                    if (x == 100 or x == 200 or x == 300 or x == 400):
-                        # ZUPT
-                        rospy.loginfo('Zupt')
-                        for y in range(0,20):
-                            self.cmd_vel.publish(stop_cmd)
-                            r.sleep()
+                    # if (x == 100 or x == 200 or x == 300 or x == 400):
+                    #     # ZUPT
+                    #     rospy.loginfo('Zupt')
+                    #     for y in range(0,20):
+                    #         self.cmd_vel.publish(stop_cmd)
+                    #         r.sleep()
                     r.sleep()
         # STOP
             rospy.loginfo('Stopping')

@@ -94,7 +94,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
             0,0,0,0,std::pow(0.02,2),0,
             0,0,0,0,0,std::pow(1.0,2);
 
-  R_zero = 0.001 * R_zero; // TODO: Needed?
+  R_zero = R_zero; // TODO: Needed?
   // NON HOLONONOMIC R VALUES
   R_holo << 0.05,0,
             0,0.1;
@@ -212,7 +212,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -221,7 +221,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -230,7 +230,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0 && abs(odom_command_2(0))<0.001 && abs(odom_command_2(1))<0.001 && abs(odom_command_2(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -1974,9 +1974,17 @@ void DekfSensorFusion::publishOdom_()
     updatedOdom.pose.covariance[17] = _x[1]; //pitch
     updatedOdom.pose.covariance[18] = _x[2]; //yaw
 
-    updatedOdom.pose.covariance[19] = true_position1(3); //roll ,,;
-    updatedOdom.pose.covariance[20] = true_position1(4); //pitch
-    updatedOdom.pose.covariance[21] = true_position1(5); //yaw
+
+    updatedOdom.twist.covariance[19] = true_position0(3); //roll ,,;
+    updatedOdom.twist.covariance[20] = true_position0(4); //pitch
+    updatedOdom.twist.covariance[21] = true_position0(5); //yaw
+    updatedOdom.twist.covariance[22] = true_position1(3); //roll ,,;
+    updatedOdom.twist.covariance[23] = true_position1(4); //pitch
+    updatedOdom.twist.covariance[24] = true_position1(5); //yaw
+    updatedOdom.twist.covariance[25] = true_position2(3); //roll ,,;
+    updatedOdom.twist.covariance[26] = true_position2(4); //pitch
+    updatedOdom.twist.covariance[27] = true_position2(5); //yaw
+
     pubOdom_.publish(updatedOdom);
 
 

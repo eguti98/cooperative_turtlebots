@@ -7,12 +7,12 @@
   <arg name="first_tb3_x_pos" default="5"/>
   <arg name="first_tb3_y_pos" default="2"/>
   <arg name="first_tb3_z_pos" default="0.0"/>
-  <arg name="first_tb3_yaw"   default="-1.570796 "/>
+  <arg name="first_tb3_yaw"   default="0.0 "/>
 
   <arg name="second_tb3_x_pos" default="5"/>
   <arg name="second_tb3_y_pos" default="-9.0"/>
   <arg name="second_tb3_z_pos" default="0.0"/>
-  <arg name="second_tb3_yaw"   default="1.570796 "/>
+  <arg name="second_tb3_yaw"   default="0.0 "/>
 
   <arg name="third_tb3_x_pos" default="-2.0"/>
   <arg name="third_tb3_y_pos" default="-7.0"/>
@@ -32,18 +32,19 @@
   <include file="$(find dekf_fakegps)/launch/gps_node.launch"/>
 
   <group ns = "$(arg first_tb3)">
-    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+    <param name="robot_description" command="$(find xacro)/xacro '$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro' --inorder robot_namespace:=$(arg first_tb3) tfpre:=$(arg first_tb3)_tf"/>
 
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
       <param name="publish_frequency" type="double" value="50.0" />
       <param name="tf_prefix" value="$(arg first_tb3)" />
+
     </node>
 
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model $(arg first_tb3) -x $(arg first_tb3_x_pos) -y $(arg first_tb3_y_pos) -z $(arg first_tb3_z_pos) -Y $(arg first_tb3_yaw) -param robot_description" />
   </group>
 
   <group ns = "$(arg second_tb3)">
-    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+    <param name="robot_description" command="$(find xacro)/xacro '$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro' --inorder robot_namespace:=$(arg second_tb3) tfpre:=$(arg second_tb3)_tf"/>
 
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
       <param name="publish_frequency" type="double" value="50.0" />
@@ -54,7 +55,7 @@
   </group>
 
   <group ns = "$(arg third_tb3)">
-    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+        <param name="robot_description" command="$(find xacro)/xacro '$(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro' --inorder robot_namespace:=$(arg third_tb3) tfpre:=$(arg third_tb3)_tf"/>
 
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
       <param name="publish_frequency" type="double" value="50.0" />
