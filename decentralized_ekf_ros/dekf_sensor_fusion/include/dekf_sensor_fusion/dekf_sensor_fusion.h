@@ -104,6 +104,7 @@ private:
 //   // ros::Publisher pubOdom_, ...
 //   // ros::Subscriber subVO_, subImu_, ...
   ros::Subscriber sub_imu; // Subscribe to IMU data
+  ros::Subscriber sub_imu_bias; // Subscribe to IMU bias data
   ros::Subscriber sub_vo; // Subscribe to Visual Odometry TODO: Are we going to use RealSense VO or our VO?
   ros::Subscriber sub_GPS; // Subscribe to GPS data
   ros::Subscriber sub_Range; //Subscribe to Range data
@@ -193,6 +194,8 @@ private:
   ros::Time _time;
   Vector3d _imu_gyro;
   Vector3d _imu_acce;
+  Vector3d _imu_gyro_bias;
+  Vector3d _imu_acce_bias;
   Matrix3d _Cnb;
   VectorXd _attitude;
   Vector3d _vel;
@@ -224,6 +227,7 @@ private:
   Matrix3d _skewsym(Vector3d vec);
   // void NonHolonomic(const DekfSensorFusion::Vector3 vel,const DekfSensorFusion::Vector3 att,const DekfSensorFusion::Vector3 pos,  const DekfSensorFusion::Vector15 _x, const Eigen::Matrix <double, 15, 15> _P, DekfSensorFusion::Vector3 imu_gyro) ;
   void imuCallback(const sensor_msgs::Imu::ConstPtr &msg);
+  void imubiasCallback(const sensor_msgs::Imu::ConstPtr &msg);
   void voCallback(const nav_msgs::Odometry::ConstPtr &msg);
   void gpsCallback(const nav_msgs::Odometry::ConstPtr& msg);       // TODO: Fill this with GPS message type based on what sensor used.
   // void rangeCallback(const sensor_msgs::Range::ConstPtr &msg);

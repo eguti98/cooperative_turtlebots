@@ -40,8 +40,8 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   eul<< 0.0,0.0,0.0;
   _Cnb = _euler2dcm(eul);
   _vel << 0,0,0;
-  ba << 10e-6,10e-6,10e-6;  // TODO: Check values later
-  bg << 10e-8,10e-8,10e-8;  // TODO: Check values later
+  ba << _imu_acce_bias(0),_imu_acce_bias(1),_imu_acce_bias(2);  // TODO: Check values later
+  bg << _imu_gyro_bias(0),_imu_gyro_bias(1),_imu_gyro_bias(2);  // TODO: Check values later
 
   if (robot_name=="tb3_0") {
     _pos << 0,0,0;
@@ -76,7 +76,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   R_gpsVal << std::pow(0.1,2), std::pow(0.1,2), std::pow(0.1,2), std::pow(0.4,2), std::pow(0.4,2), std::pow(0.4,2);
   R_gps = R_gpsVal.asDiagonal();
 
-  R_range << 0.2*0.2; // TODO: Value?
+  R_range << 0.5; // TODO: Value?
   initializer = 0;
   truths_0 = 0;
   truths_1 = 0;
@@ -87,9 +87,9 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
 
 
-  R_zero << std::pow(0.1,2),0,0,0,0,0,
-            0,std::pow(0.1,2),0,0,0,0,
-            0,0,std::pow(0.1,2),0,0,0,
+  R_zero << std::pow(0.01,2),0,0,0,0,0,
+            0,std::pow(0.01,2),0,0,0,0,
+            0,0,std::pow(0.01,2),0,0,0,
             0,0,0,std::pow(0.02,2),0,0,
             0,0,0,0,std::pow(0.02,2),0,
             0,0,0,0,0,std::pow(1.0,2);
@@ -116,6 +116,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
 
 
   sub_imu = nh.subscribe("imu", 10, &DekfSensorFusion::imuCallback, this);
+  sub_imu_bias = nh.subscribe("imu/bias", 10, &DekfSensorFusion::imubiasCallback, this);
   sub_GPS = nh.subscribe("gps", 1, &DekfSensorFusion::gpsCallback,this); ///uav0/mavros/global_position/local // this is not the specific gps topic
   true_drone0 = nh.subscribe("/tb3_0/truth", 1, &DekfSensorFusion::true_drone0Callback, this);
   true_drone1 = nh.subscribe("/tb3_1/truth", 1, &DekfSensorFusion::true_drone1Callback, this);
@@ -126,6 +127,19 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   odom_tb0 = nh.subscribe("/tb3_0/odom", 1, &DekfSensorFusion::odom_tb0Callback, this);
   odom_tb1 = nh.subscribe("/tb3_1/odom", 1, &DekfSensorFusion::odom_tb1Callback, this);
   odom_tb2 = nh.subscribe("/tb3_2/odom", 1, &DekfSensorFusion::odom_tb2Callback, this);
+}
+void DekfSensorFusion::imubiasCallback(const sensor_msgs::Imu::ConstPtr &msg)
+{
+  double bias_g_x = msg->angular_velocity.x;
+  double bias_g_y = msg->angular_velocity.y;
+  double bias_g_z = msg->angular_velocity.z;
+  double bias_a_x = msg->linear_acceleration.x;
+  double bias_a_y = msg->linear_acceleration.y;
+  double bias_a_z = msg->linear_acceleration.z;
+
+  _imu_gyro_bias << bias_g_x,bias_g_y,bias_g_z;
+  _imu_acce_bias << bias_a_x,bias_a_y,bias_a_z;
+
 }
 //
 // IMU Prediction
@@ -150,13 +164,13 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 
       _t = _time.toSec();
       relative_update_done = 0;
-      double p = msg->angular_velocity.x-bg(0);
-      double q = msg->angular_velocity.y-bg(1);
-      double r = msg->angular_velocity.z-bg(2);
+      double p = msg->angular_velocity.x + _imu_gyro_bias(0)-bg(0);
+      double q = msg->angular_velocity.y + _imu_gyro_bias(1)-bg(1);
+      double r = msg->angular_velocity.z + _imu_gyro_bias(2)-bg(2);
       // omega_ib = p,q,r
-      double ax= msg->linear_acceleration.x-ba(0);
-      double ay= msg->linear_acceleration.y-ba(1);
-      double az= msg->linear_acceleration.z-ba(2);
+      double ax= msg->linear_acceleration.x + _imu_acce_bias(0)-ba(0);
+      double ay= msg->linear_acceleration.y + _imu_acce_bias(1)-ba(1);
+      double az= msg->linear_acceleration.z + _imu_acce_bias(2)-ba(2);
       // // f_ib= ax,ay,az
 
       _imu_gyro << p, q, r;
@@ -212,7 +226,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_0(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_0(1)<< '\n';
     if (zupt_command_0(0)==0 && zupt_command_0(1)==0 && abs(odom_command_0(0))<0.001 && abs(odom_command_0(1))<0.001 && abs(odom_command_0(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // // ROS_INFO("Zero Update Done");
     }
@@ -221,7 +235,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_1(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_1(1)<< '\n';
     if (zupt_command_1(0)==0 && zupt_command_1(1)==0 && abs(odom_command_1(0))<0.001 && abs(odom_command_1(1))<0.001 && abs(odom_command_1(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -230,7 +244,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // std::cout << "Linear Velocity Command: " << zupt_command_2(0)<< '\n';
     // std::cout << "Angular Velocity Command: " << zupt_command_2(1)<< '\n';
     if (zupt_command_2(0)==0 && zupt_command_2(1)==0 && abs(odom_command_2(0))<0.001 && abs(odom_command_2(1))<0.001 && abs(odom_command_2(2))<0.01) {
-      zeroUpdate();
+      // zeroUpdate();
       // nonHolonomicUpdate();
       // ROS_INFO("Zero Update Done");
     }
@@ -549,8 +563,10 @@ void DekfSensorFusion::relativeUpdate()
   //
   states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
   err_states << err_state1(0),err_state1(1),err_state1(2),err_state1(3),err_state1(4),err_state1(5),err_state1(6),err_state1(7),err_state1(8),err_state1(9),err_state1(10),err_state1(11),err_state1(12),err_state1(13),err_state1(14),err_state2(0),err_state2(1),err_state2(2),err_state2(3),err_state2(4),err_state2(5),err_state2(6),err_state2(7),err_state2(8),err_state2(9),err_state2(10),err_state2(11),err_state2(12),err_state2(13),err_state2(14);
+  std::cout << "Error States Before"<< robot_name << ": \n" << err_state2.segment(6,3) << '\n';
 
   h_range = sqrt(pow((states(21)-states(6)),2)+pow((states(22)-states(7)),2)+pow((states(23)-states(8)),2));
+  // h_range = sqrt(pow((states(21)-states(6)),2)+pow((states(22)-states(7)),2));
 
   H_range << 0,0,0,0,0,0,
              -(states(21)-states(6)) / h_range,
@@ -562,6 +578,16 @@ void DekfSensorFusion::relativeUpdate()
             (states(22)-states(7)) / h_range,
             (states(23)-states(8)) / h_range,
             0,0,0,0,0,0;
+            // H_range << 0,0,0,0,0,0,
+            //            -(states(21)-states(6)) / h_range,
+            //            -(states(22)-states(7)) / h_range,
+            //            0,
+            //            0,0,0,0,0,0,
+            //            0,0,0,0,0,0,
+            //           (states(21)-states(6)) / h_range,
+            //           (states(22)-states(7)) / h_range,
+            //           0,
+            //           0,0,0,0,0,0;
 
   MatrixXd S(1, 1);
   S = H_range * covariances * H_range.transpose() + R_range;
@@ -571,7 +597,7 @@ void DekfSensorFusion::relativeUpdate()
 
   res_range = range_update - h_range;
         // std::cout << "RESIDUAL \n" << res_range <<'\n';
-  if (abs(res_range) > 200.0)
+  if (abs(res_range) > 500.0)
   {
   //     // ROS_INFO("------------");
       ROS_WARN_STREAM(robot_name<<": Relative Update Ignored");
@@ -588,7 +614,9 @@ void DekfSensorFusion::relativeUpdate()
 
       // std::cout << "BEFORE UPD ERROR STATE \n" << err_states.segment(15,15) <<'\n';
       err_states = err_states + K_range*res_range;
-
+      std::cout << "Error States After"<< robot_name << ": \n" << err_states.segment(21,3) << '\n';
+      std::cout << "res_range"<< robot_name << ": \n" << res_range << '\n';
+      std::cout << "H_range"<< robot_name << ": \n" << H_range<< '\n';
       covariances = (I30 - K_range*H_range)*covariances;
       // covariances = (I30 - K_range*H_range)*covariances*(I30 - K_range*H_range).inverse() + K_range*R_range*K_range.transpose();
 
@@ -613,8 +641,10 @@ void DekfSensorFusion::relativeUpdate()
         bg(0) =  error_state_updated_1(12);
         bg(1) =  error_state_updated_1(13);
         bg(2) =  error_state_updated_1(14);
+
         err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
         _error_states<<err_states.segment(0,15);
+        error_state_updated_1<<Eigen::VectorXd::Zero(15);
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(0,0) = covariances.block<15,15>(0,0);
@@ -641,8 +671,12 @@ void DekfSensorFusion::relativeUpdate()
         relative_state_updated(12) =  error_state_updated_2(12);
         relative_state_updated(13) =  error_state_updated_2(13);
         relative_state_updated(14) =  error_state_updated_2(14);
+        std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
+        std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
+        std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
         err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
         relative_error_state_updated<<err_states.segment(15,15);
+        error_state_updated_2<<Eigen::VectorXd::Zero(15);
 
         // std::cout << "BEFORE UPD TOTAL STATE \n" << state2 <<'\n';
         // std::cout << "AFTER UPD ERROR STATE \n" << err_states.segment(15,15) <<'\n';
@@ -760,6 +794,7 @@ void DekfSensorFusion::relativeUpdate()
         bg(2) =  error_state_updated_1(14);
         err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
         _error_states<<err_states.segment(0,15);
+        error_state_updated_1<<Eigen::VectorXd::Zero(15);
 
         _P = covariances.block<15,15>(0,0);
         _globalP.block<15,15>(15,15) = covariances.block<15,15>(0,0);
@@ -786,9 +821,12 @@ void DekfSensorFusion::relativeUpdate()
         relative_state_updated(12) =  error_state_updated_2(12);
         relative_state_updated(13) =  error_state_updated_2(13);
         relative_state_updated(14) =  error_state_updated_2(14);
+        std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
+        std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
+        std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
         err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
         relative_error_state_updated<<err_states.segment(15,15);
-
+        error_state_updated_2<<Eigen::VectorXd::Zero(15);
         // std::cout << "BEFORE UPD TOTAL STATE \n" << state2 <<'\n';
         // std::cout << "AFTER UPD ERROR STATE \n" << err_states.segment(15,15) <<'\n';
         // std::cout << "AFTER UPD TOTAL STATE \n" << relative_state_updated <<'\n';
@@ -823,7 +861,7 @@ void DekfSensorFusion::relativeUpdate()
         bg(2) =  error_state_updated_1(14);
         err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
         _error_states<<err_states.segment(15,15);
-
+        error_state_updated_1<<Eigen::VectorXd::Zero(15);
         _P = covariances.block<15,15>(15,15);
         _globalP.block<15,15>(30,30) = covariances.block<15,15>(15,15);
         // _globalP.block<15,15>(0,15) = (Eigen::MatrixXd::Identity(15,15) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,0))*_globalP.block<15,15>(0,15) - K_range.block<15,1>(0,0)*H_range.block<1,15>(0,15)*P_d1;
@@ -849,9 +887,12 @@ void DekfSensorFusion::relativeUpdate()
         relative_state_updated(12) =  error_state_updated_2(12);
         relative_state_updated(13) =  error_state_updated_2(13);
         relative_state_updated(14) =  error_state_updated_2(14);
+        std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
+        std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
+        std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
         err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
         relative_error_state_updated<<err_states.segment(0,15);
-
+        error_state_updated_2<<Eigen::VectorXd::Zero(15);
         // std::cout << "BEFORE UPD TOTAL STATE \n" << state2 <<'\n';
         // std::cout << "AFTER UPD ERROR STATE \n" << err_states.segment(15,15) <<'\n';
         // std::cout << "AFTER UPD TOTAL STATE \n" << relative_state_updated <<'\n';
@@ -1838,16 +1879,16 @@ return;
 }
 void DekfSensorFusion::calculateProcessNoiseINS()
 {
-  // double sig_gyro_inRun = 1.6*3.14/180/3600; //rad/s -- standard deviation of the gyro dynamic biases
-  // double sig_ARW = 10*(3.14/180)*sqrt(3600)/3600;; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
+  double sig_gyro_inRun = 1.6*3.14/180/3600; //rad/s -- standard deviation of the gyro dynamic biases
+  double sig_ARW = 10*(3.14/180)*sqrt(3600)/3600;; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
   //
-  // double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
-  // double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
-  double sig_gyro_inRun = 0; //0.0000008; //rad/s -- standard deviation of the gyro dynamic biases
-  double sig_ARW = 2.0e-4; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
+  double sig_accel_inRun = (3.2e-5)*9.81; // m/s -- standard deviation of the accelerometer dynamic biases
+  double sig_VRW = 10*sqrt(3600)/3600; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
+  // double sig_gyro_inRun = 0.0000008; //rad/s -- standard deviation of the gyro dynamic biases
+  // double sig_ARW = 2.0e-4; //rad -- standard deviation of the noise on the gyro angular rate measurement 10-0.2
 
-  double sig_accel_inRun = 0;//0.001; // m/s -- standard deviation of the accelerometer dynamic biases
-  double sig_VRW = 1.7e-2; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
+  // double sig_accel_inRun = 0.001; // m/s -- standard deviation of the accelerometer dynamic biases
+  // double sig_VRW = 1.7e-2; //m/s -- standard deviation of the noise on the accelerometer specific force measurement 10.
 
   //following 14.2.6 of Groves
   double Srg= pow(sig_ARW,2)*_dt; // PSD of the gyro noise
