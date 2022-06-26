@@ -3,6 +3,7 @@
 
 import rospy
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Float64MultiArray
 from math import radians
 
 import os
@@ -10,8 +11,12 @@ import os
 import numpy as np
 from nav_msgs.msg import Odometry
 
+cov_zupt = int()
 
 class DrawALine:
+
+    # global cov_x
+    # cov_x = 0
 
     def __init__(self):
 
@@ -43,45 +48,73 @@ class DrawALine:
         turn_cmd.linear.x = 0
         turn_cmd.angular.z = radians(30)
 
+        rospy.Subscriber("covariance",Float64MultiArray,self.covariance_callback)
+        # self.covariance_subscriber()
+
 
         count = 0
         while not rospy.is_shutdown():
+
 
             if robot == "tb3_0":
                 # FORWARD
                 rospy.loginfo('Going Straight')
                 for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
-                    if (x == 50 or x == 100 or x == 150 or x == 200):
-                        # ZUPT
+                    # # PERIODIC ZUPT
+                    # if (x == 50 or x == 100 or x == 150 or x == 200):
+                    #     rospy.loginfo('Zupt')
+                    #     for y in range(0,20):
+                    #         self.cmd_vel.publish(stop_cmd)
+                    #         r.sleep()
+                    # COVARIANCE ZUPT
+                    if cov_zupt == 1:
                         rospy.loginfo('Zupt')
                         for y in range(0,20):
                             self.cmd_vel.publish(stop_cmd)
                             r.sleep()
+                        # cov_zupt = 0
                     r.sleep()
+
             elif robot == "tb3_1":
                 # FORWARD
                 rospy.loginfo('Going Straight')
                 for x in range(0, 250):
                     self.cmd_vel.publish(move_cmd)
-                    if (x == 50 or x == 100 or x == 150 or x == 200):
-                        # ZUPT
+                    # # PERIODIC ZUPT
+                    # if (x == 50 or x == 100 or x == 150 or x == 200):
+                    #     rospy.loginfo('Zupt')
+                    #     for y in range(0,20):
+                    #         self.cmd_vel.publish(stop_cmd)
+                    #         r.sleep()
+                    # COVARIANCE ZUPT
+                    if cov_zupt == 1:
                         rospy.loginfo('Zupt')
                         for y in range(0,20):
                             self.cmd_vel.publish(stop_cmd)
                             r.sleep()
+                        # cov_zupt = 0
                     r.sleep()
+
             elif robot == "tb3_2":
                 # FORWARD
                 rospy.loginfo('Going Straight')
                 for x in range(0, 500):
                     self.cmd_vel.publish(move_cmd)
-                    if (x == 100 or x == 200 or x == 300 or x == 400):
-                        # ZUPT
+                    # # PERIODIC ZUPT
+                    # if (x == 100 or x == 200 or x == 300 or x == 400):
+                    #     rospy.loginfo('Zupt')
+                    #     for y in range(0,20):
+                    #         self.cmd_vel.publish(stop_cmd)
+                    #         r.sleep()
+                    # print(cov_zupt)
+                    # COVARIANCE ZUPT
+                    if cov_zupt == 1:
                         rospy.loginfo('Zupt')
                         for y in range(0,20):
                             self.cmd_vel.publish(stop_cmd)
                             r.sleep()
+                        # cov_zupt = 0
                     r.sleep()
         # STOP
             rospy.loginfo('Stopping')
@@ -120,6 +153,20 @@ class DrawALine:
         rospy.loginfo('Stop Drawing Lines')
         self.cmd_vel.publish(Twist())
         rospy.sleep(1)
+
+    def covariance_callback(self,covariance):
+
+        global cov_zupt
+
+        cov_x = covariance.data[0]
+        cov_y = covariance.data[1]
+        cov_z = covariance.data[2]
+
+        if (cov_x > 5 or cov_y > 5 or cov_z > 5):
+            cov_zupt = 1
+        else:
+            cov_zupt = 0
+
 
 if __name__ == '__main__':
 

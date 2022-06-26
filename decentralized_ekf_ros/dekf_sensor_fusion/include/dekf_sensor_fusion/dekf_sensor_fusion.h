@@ -29,6 +29,7 @@ public:
   void relativeUpdate();
   void initialization();
   void publishRange_();
+  void publishCov_();
   // std::string node_name;
   std::string robot_name;
   std::string robot_id_received;
@@ -121,6 +122,7 @@ private:
   ros::Subscriber odom_tb2;  //Subscribes to velocity command from turtlebot 2
   ros::Publisher pubOdom_;
   ros::Publisher pubRange_;
+  ros::Publisher pubCov_;
   // ros::Publisher pubResidual_;
 
   geometry_msgs::Pose pose_;

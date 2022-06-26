@@ -34,6 +34,8 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   pubOdom_ = nh_.advertise<nav_msgs::Odometry>(
       "localization/odometry/sensor_fusion", 1);
   pubRange_ = nh_.advertise<std_msgs::Float64MultiArray>("range",1);
+  pubCov_ = nh_.advertise<std_msgs::Float64MultiArray>("covariance",1);
+  // pubCov_ = nh_.advertise<std_msgs::Float64>("covariance",1);
   // pubResidual_ = nh_.advertise<std_msgs::Float64>("residual",1);
 
   Vector3d eul;
@@ -76,7 +78,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
   R_gpsVal << std::pow(0.1,2), std::pow(0.1,2), std::pow(0.1,2), std::pow(0.4,2), std::pow(0.4,2), std::pow(0.4,2);
   R_gps = R_gpsVal.asDiagonal();
 
-  R_range << 0.5; // TODO: Value?
+  R_range << 0.04; // TODO: Value?
   initializer = 0;
   truths_0 = 0;
   truths_1 = 0;
@@ -94,7 +96,7 @@ DekfSensorFusion::DekfSensorFusion(ros::NodeHandle &nh) : nh_(nh)
             0,0,0,0,std::pow(0.02,2),0,
             0,0,0,0,0,std::pow(1.0,2);
 
-  R_zero = R_zero; // TODO: Needed?
+  R_zero = 0.001*R_zero; // TODO: Needed?
   // NON HOLONONOMIC R VALUES
   R_holo << 0.05,0,
             0,0.1;
@@ -294,6 +296,7 @@ void DekfSensorFusion::imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
     // }
 
     publishOdom_();
+    publishCov_();
   }
   // else {return;}
 }
@@ -563,7 +566,7 @@ void DekfSensorFusion::relativeUpdate()
   //
   states << state1(0),state1(1),state1(2),state1(3),state1(4),state1(5),state1(6),state1(7),state1(8),state1(9),state1(10),state1(11),state1(12),state1(13),state1(14),state2(0),state2(1),state2(2),state2(3),state2(4),state2(5),state2(6),state2(7),state2(8),state2(9),state2(10),state2(11),state2(12),state2(13),state2(14);
   err_states << err_state1(0),err_state1(1),err_state1(2),err_state1(3),err_state1(4),err_state1(5),err_state1(6),err_state1(7),err_state1(8),err_state1(9),err_state1(10),err_state1(11),err_state1(12),err_state1(13),err_state1(14),err_state2(0),err_state2(1),err_state2(2),err_state2(3),err_state2(4),err_state2(5),err_state2(6),err_state2(7),err_state2(8),err_state2(9),err_state2(10),err_state2(11),err_state2(12),err_state2(13),err_state2(14);
-  std::cout << "Error States Before"<< robot_name << ": \n" << err_state2.segment(6,3) << '\n';
+  // std::cout << "Error States Before"<< robot_name << ": \n" << err_state2.segment(6,3) << '\n';
 
   h_range = sqrt(pow((states(21)-states(6)),2)+pow((states(22)-states(7)),2)+pow((states(23)-states(8)),2));
   // h_range = sqrt(pow((states(21)-states(6)),2)+pow((states(22)-states(7)),2));
@@ -614,9 +617,9 @@ void DekfSensorFusion::relativeUpdate()
 
       // std::cout << "BEFORE UPD ERROR STATE \n" << err_states.segment(15,15) <<'\n';
       err_states = err_states + K_range*res_range;
-      std::cout << "Error States After"<< robot_name << ": \n" << err_states.segment(21,3) << '\n';
-      std::cout << "res_range"<< robot_name << ": \n" << res_range << '\n';
-      std::cout << "H_range"<< robot_name << ": \n" << H_range<< '\n';
+      // std::cout << "Error States After"<< robot_name << ": \n" << err_states.segment(21,3) << '\n';
+      // std::cout << "res_range"<< robot_name << ": \n" << res_range << '\n';
+      // std::cout << "H_range"<< robot_name << ": \n" << H_range<< '\n';
       covariances = (I30 - K_range*H_range)*covariances;
       // covariances = (I30 - K_range*H_range)*covariances*(I30 - K_range*H_range).inverse() + K_range*R_range*K_range.transpose();
 
@@ -671,9 +674,9 @@ void DekfSensorFusion::relativeUpdate()
         relative_state_updated(12) =  error_state_updated_2(12);
         relative_state_updated(13) =  error_state_updated_2(13);
         relative_state_updated(14) =  error_state_updated_2(14);
-        std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
-        std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
-        std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
+        // std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
+        // std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
+        // std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
         err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
         relative_error_state_updated<<err_states.segment(15,15);
         error_state_updated_2<<Eigen::VectorXd::Zero(15);
@@ -821,9 +824,9 @@ void DekfSensorFusion::relativeUpdate()
         relative_state_updated(12) =  error_state_updated_2(12);
         relative_state_updated(13) =  error_state_updated_2(13);
         relative_state_updated(14) =  error_state_updated_2(14);
-        std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
-        std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
-        std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
+        // std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
+        // std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
+        // std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
         err_states.segment(15,9)<<Eigen::VectorXd::Zero(9);
         relative_error_state_updated<<err_states.segment(15,15);
         error_state_updated_2<<Eigen::VectorXd::Zero(15);
@@ -887,9 +890,9 @@ void DekfSensorFusion::relativeUpdate()
         relative_state_updated(12) =  error_state_updated_2(12);
         relative_state_updated(13) =  error_state_updated_2(13);
         relative_state_updated(14) =  error_state_updated_2(14);
-        std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
-        std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
-        std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
+        // std::cout << "/* relative_state_updated_pos \n */" <<relative_state_updated.segment(6,3) << '\n';
+        // std::cout << "/* state2_pos \n */" <<state2.segment(6,3) << '\n';
+        // std::cout << "/* error_state_updated2_pos \n */" <<error_state_updated_2.segment(6,3) << '\n';
         err_states.segment(0,9)<<Eigen::VectorXd::Zero(9);
         relative_error_state_updated<<err_states.segment(0,15);
         error_state_updated_2<<Eigen::VectorXd::Zero(15);
@@ -2115,6 +2118,20 @@ void DekfSensorFusion::publishRange_()
   std_msgs::Float64MultiArray range_to_drone;
   range_to_drone.data = _rangeV;
   pubRange_.publish(range_to_drone);
+
+}
+void DekfSensorFusion::publishCov_()
+{
+  std::vector<double> _covV(3);
+
+  _covV[0] = _P(6,6);
+  _covV[1]  = _P(7,7);
+  _covV[2]  = _P(8,8);
+  // std::cout << "_P\n" << _P<<'\n';
+  std_msgs::Float64MultiArray cov_drone;
+    // std_msgs::Float64 cov_drone;
+  cov_drone.data = _covV;
+  pubCov_.publish(cov_drone);
 
 }
 //
